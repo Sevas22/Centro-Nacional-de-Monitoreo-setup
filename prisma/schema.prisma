@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Importance {
+  critical
+  high
+  normal
+}
+
+enum Sentiment {
+  positive
+  negative
+  neutral
+}
+
+enum ActivityLevel {
+  low
+  medium
+  high
+  critical
+}
+
+enum AlertSeverity {
+  critical
+  high
+  medium
+  low
+}
+
+enum EntityType {
+  person
+  org
+  company
+  place
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Department {
+  id             String         @id
+  name           String
+  newsCount      Int
+  level          ActivityLevel
+  municipalities Municipality[]
+}
+
+model Municipality {
+  id            String        @id
+  name          String
+  departmentId  String
+  department    Department    @relation(fields: [departmentId], references: [id])
+  newsCount     Int
+  activityLevel ActivityLevel
+
+  @@index([departmentId])
+}
+
+model NewsArticle {
+  id             String     @id
+  title          String
+  summary        String
+  fullText       String?
+  source         String
+  sourceUrl      String?
+  department     String
+  municipality   String
+  time           String
+  category       String
+  importance     Importance
+  sentiment      Sentiment
+  sentimentScore Float?
+  riskScore      Float?
+  viewCount      Int?
+  isBreaking     Boolean    @default(false)
+  aiSummary      String
+  tags           String[]
+  entities       Json?
+  createdAt      DateTime   @default(now())
+}
+
+model NewsSource {
+  id          String  @id
+  name        String
+  type        String
+  region      String
+  newsToday   Int
+  uptime      Float
+  latency     Int
+  lastFetchAt String?
+}
+
+model AlertItem {
+  id          String        @id
+  title       String
+  description String
+  severity    AlertSeverity
+  time        String
+  active      Boolean       @default(true)
+}
+
+model Entity {
+  id    String     @id
+  name  String
+  type  EntityType
+  count Int
+}

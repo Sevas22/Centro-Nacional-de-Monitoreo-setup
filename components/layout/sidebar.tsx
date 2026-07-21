@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -14,6 +15,8 @@ import {
   BrainCircuit,
   Settings,
   Satellite,
+  LogOut,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -50,8 +53,27 @@ const groups: { title: string; items: NavItem[] }[] = [
   },
 ]
 
-export function Sidebar() {
+function initials(name: string) {
+  const base = name.includes('@') ? name.split('@')[0] : name
+  const parts = base.trim().split(/[\s._-]+/).filter(Boolean)
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('')
+}
+
+export function Sidebar({ username }: { username: string }) {
   const pathname = usePathname()
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    try {
+      await fetch('/api/logout', { method: 'POST' })
+    } finally {
+      window.location.assign('/login')
+    }
+  }
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-[220px] flex-col border-r border-border bg-surface">
@@ -115,12 +137,21 @@ export function Sidebar() {
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-2.5 rounded-lg px-1 py-1.5">
           <div className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-semibold text-primary-foreground">
-            JR
+            {initials(username)}
           </div>
-          <div className="leading-tight">
-            <p className="text-[13px] font-medium text-foreground">Juan Ramírez</p>
-            <p className="text-[11px] text-muted-foreground">Analista de Inteligencia</p>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-[13px] font-medium text-foreground">{username}</p>
+            <p className="text-[11px] text-muted-foreground">Cuenta registrada</p>
           </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+            className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+          >
+            {loggingOut ? <Loader2 className="size-3.5 animate-spin" /> : <LogOut className="size-3.5" />}
+          </button>
         </div>
       </div>
     </aside>
