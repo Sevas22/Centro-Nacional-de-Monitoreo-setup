@@ -18,6 +18,7 @@ import {
   LogOut,
   Loader2,
   Shield,
+  Antenna,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +48,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { label: 'Fuentes', href: '/fuentes', icon: Radio },
       { label: 'Análisis IA', href: '/analisis-ia', icon: BrainCircuit },
       { label: 'Monitoreo GAO', href: '/gao', icon: Shield },
+      { label: 'Espectro RF', href: '/espectro', icon: Antenna },
     ],
   },
   {
