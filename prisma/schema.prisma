@@ -117,3 +117,21 @@ model Entity {
   type  EntityType
   count Int
 }
+
+// Artículos ingeridos por RSS desde organizaciones independientes de monitoreo
+// de conflicto armado (INDEPAZ, CERAC, PARES). Nunca contenido publicado
+// directamente por un actor armado — solo terceros que reportan/analizan.
+model GaoSourceItem {
+  id              String   @id @default(cuid())
+  source          String
+  title           String
+  link            String   @unique
+  summary         String
+  publishedAt     DateTime
+  categories      String[]
+  mentionedGroups String[]
+  createdAt       DateTime @default(now())
+
+  @@index([source])
+  @@index([publishedAt])
+}

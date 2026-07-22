@@ -17,6 +17,7 @@ import {
   Satellite,
   LogOut,
   Loader2,
+  Shield,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -45,6 +46,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { label: 'Alertas', href: '/alertas', icon: Bell, badge: { count: 5, tone: 'red' } },
       { label: 'Fuentes', href: '/fuentes', icon: Radio },
       { label: 'Análisis IA', href: '/analisis-ia', icon: BrainCircuit },
+      { label: 'Monitoreo GAO', href: '/gao', icon: Shield },
     ],
   },
   {
