@@ -1,10 +1,11 @@
-import { Antenna, CloudRain, Droplets, Gauge, Thermometer } from 'lucide-react'
+import { Antenna, CloudRain, Droplets, Gauge, Map as MapIcon, Thermometer } from 'lucide-react'
 import { PageHeader, PageTransition } from '@/components/page-shell'
 import { SectionCard } from '@/components/dashboard/section-card'
 import { DepartmentSelect } from '@/components/spectrum/department-select'
+import { ClimateMap, type DeptClimate } from '@/components/spectrum/climate-map'
+import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
 import { departmentCapitals, departmentNames } from '@/lib/spectrum/department-capitals'
-import { geocodeCity } from '@/lib/spectrum/geocode'
-import { fetchCurrentWeather } from '@/lib/spectrum/weather'
+import { fetchWeatherBatch, type CurrentWeather } from '@/lib/spectrum/weather'
 import { assessBands, type StabilityLevel } from '@/lib/spectrum/model'
 import { frequencyBands } from '@/lib/spectrum/bands'
 import { cn } from '@/lib/utils'
@@ -23,10 +24,22 @@ export default async function EspectroPage({
 }) {
   const { depto } = await searchParams
   const department = depto && departmentNames.includes(depto) ? depto : 'Bogotá D.C.'
-  const capital = departmentCapitals[department]
 
-  const geo = await geocodeCity(`${capital}, Colombia`)
-  const weather = geo ? await fetchCurrentWeather(geo.lat, geo.lng) : null
+  // Una sola petición a Open-Meteo para las 32 capitales (el mapa y el detalle salen del mismo fetch).
+  const coords = departmentNames.map((name) => departmentCoordinates[name])
+  const weatherList = await fetchWeatherBatch(coords)
+  const weatherByDept = new Map<string, CurrentWeather | null>(departmentNames.map((name, i) => [name, weatherList[i]]))
+
+  const mapData: Record<string, DeptClimate> = {}
+  for (const name of departmentNames) {
+    const weather = weatherByDept.get(name)
+    if (!weather) continue
+    const assessment = assessBands(weather).find((a) => a.band === 'vhf')
+    if (!assessment || assessment.stability === 'no_aplica') continue
+    mapData[name] = { tempC: weather.temperatureC, humidityPct: weather.humidityPct, stability: assessment.stability }
+  }
+
+  const weather = weatherByDept.get(department) ?? null
   const assessments = weather ? assessBands(weather) : null
 
   return (
@@ -36,9 +49,17 @@ export default async function EspectroPage({
         subtitle="Estimación de estabilidad de comunicación por banda de frecuencia a partir de clima real"
       />
 
+      <SectionCard
+        title="Mapa nacional de condiciones climatológicas"
+        icon={<MapIcon className="size-4 text-[var(--accent-blue)]" />}
+        className="mb-6"
+      >
+        <ClimateMap data={mapData} selected={department} />
+      </SectionCard>
+
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <DepartmentSelect current={department} />
-        <span className="text-xs text-muted-foreground">Capital de referencia: {capital}</span>
+        <span className="text-xs text-muted-foreground">Capital de referencia: {departmentCapitals[department]}</span>
       </div>
 
       <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3 text-xs text-muted-foreground">
