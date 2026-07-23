@@ -14,8 +14,12 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next()
 }
 
+// api/gao, api/spectrum y api/briefings implementan su propia autorización (CRON_SECRET
+// para los cron jobs, o verificación de sesión manual dentro del handler) — nunca deben
+// pasar por este middleware de cookie de sesión, o Vercel Cron recibiría un redirect a
+// /login en vez de ejecutar el handler real.
 export const config = {
   matcher: [
-    '/((?!login|register|api/login|api/register|api/logout|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|json|ico|webp)$).*)',
+    '/((?!login|register|api/login|api/register|api/logout|api/gao|api/spectrum|api/briefings|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|json|ico|webp)$).*)',
   ],
 }

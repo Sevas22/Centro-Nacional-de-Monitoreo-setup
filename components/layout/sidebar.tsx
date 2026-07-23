@@ -86,8 +86,8 @@ export function Sidebar({ username }: { username: string }) {
           <Satellite className="size-5" />
         </div>
         <div className="leading-tight">
-          <p className="text-[13px] font-semibold text-foreground">Centro Nacional</p>
-          <p className="text-[11px] text-muted-foreground">de Monitoreo</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-primary/70">Proyecto ATLAS</p>
+          <p className="text-[13px] font-semibold text-foreground">SIFEM</p>
         </div>
       </div>
 

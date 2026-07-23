@@ -16,10 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Centro Nacional de Monitoreo | Inteligencia de Noticias',
+  title: 'SIFEM | Proyecto ATLAS',
   description:
-    'Plataforma de inteligencia impulsada por IA que monitorea noticias en toda Colombia en tiempo real.',
-  generator: 'v0.app',
+    'SIFEM — Sistema Integrado de Fuentes, Espectro y Meteorología. Integra y correlaciona fuentes abiertas, condiciones meteorológicas y mediciones del espectro radioeléctrico para fortalecer la conciencia situacional y el apoyo a la toma de decisiones.',
 }
 
 export const viewport: Viewport = {

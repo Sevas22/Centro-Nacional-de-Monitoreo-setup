@@ -3,6 +3,14 @@
     {
       "path": "/api/gao/ingest",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/spectrum/snapshot",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/briefings/generate",
+      "schedule": "0 12 * * *"
     }
   ]
 }

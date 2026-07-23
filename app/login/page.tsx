@@ -3,7 +3,7 @@ import { Satellite } from 'lucide-react'
 import { LoginForm } from '@/components/auth/login-form'
 
 export const metadata: Metadata = {
-  title: 'Iniciar sesión | Centro Nacional de Monitoreo',
+  title: 'Iniciar sesión | SIFEM',
 }
 
 export default async function LoginPage({
@@ -22,8 +22,9 @@ export default async function LoginPage({
             <Satellite className="size-6" />
           </div>
           <div>
-            <p className="text-base font-semibold text-foreground">Centro Nacional de Monitoreo</p>
-            <p className="text-xs text-muted-foreground">Inteligencia de noticias en tiempo real</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70">Proyecto ATLAS</p>
+            <p className="text-lg font-bold text-foreground">SIFEM</p>
+            <p className="text-xs text-muted-foreground">Sistema Integrado de Fuentes, Espectro y Meteorología</p>
           </div>
         </div>
         <div className="glass rounded-2xl p-6">

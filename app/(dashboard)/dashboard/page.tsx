@@ -17,8 +17,8 @@ import { Heatmap } from '@/components/dashboard/heatmap'
 import { AIIntelligencePanel } from '@/components/dashboard/ai-intelligence-panel'
 
 export const metadata: Metadata = {
-  title: 'Dashboard | ColombiaNews Intelligence',
-  description: 'Monitoreo de noticias en tiempo real con inteligencia artificial para Colombia.',
+  title: 'Dashboard | SIFEM',
+  description: 'SIFEM — Sistema Integrado de Fuentes, Espectro y Meteorología, programa Proyecto ATLAS.',
 }
 
 export default function DashboardPage() {

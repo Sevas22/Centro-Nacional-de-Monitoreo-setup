@@ -1,5 +1,6 @@
 import type { BandId } from './bands'
 import type { CurrentWeather } from './weather'
+import type { DeptClimate } from './map-colors'
 
 export type StabilityLevel = 'baja' | 'media' | 'alta' | 'no_aplica'
 
@@ -49,6 +50,22 @@ export function computeRainAttenuation(freqGhz: number, rainRateMmH: number): nu
   const k = 0.0001 * Math.pow(freqGhz, 1.6)
   const alpha = 1.1
   return k * Math.pow(rainRateMmH, alpha)
+}
+
+/**
+ * Transforma clima real en el resumen que consume el mapa/panel (DeptClimate) — misma forma
+ * para departamentos y municipios, así se reutiliza en ambos casos en vez de repetir esta lógica.
+ */
+export function deriveClimate(weather: CurrentWeather): DeptClimate | null {
+  const assessment = assessBands(weather).find((a) => a.band === 'vhf')
+  if (!assessment || assessment.stability === 'no_aplica') return null
+  return {
+    tempC: weather.temperatureC,
+    humidityPct: weather.humidityPct,
+    precipitationMm: weather.precipitationMm,
+    stability: assessment.stability,
+    attenuationDbKm: computeRainAttenuation(12, weather.precipitationMm),
+  }
 }
 
 function classifyRefractivity(n: number): StabilityLevel {

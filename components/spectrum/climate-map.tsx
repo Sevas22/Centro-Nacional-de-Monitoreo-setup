@@ -14,7 +14,17 @@ const LeafletClimateMap = dynamic(() => import('./leaflet-climate-map').then((m)
   ),
 })
 
-export function ClimateMap({ data, selected }: { data: Record<string, DeptClimate>; selected: string }) {
+export function ClimateMap({
+  data,
+  selected,
+  municipiosData,
+  selectedDeptCode,
+}: {
+  data: Record<string, DeptClimate>
+  selected: string
+  municipiosData?: Record<string, DeptClimate>
+  selectedDeptCode?: string
+}) {
   const [layer, setLayer] = useState<MapLayer>('stability')
 
   return (
@@ -56,7 +66,13 @@ export function ClimateMap({ data, selected }: { data: Record<string, DeptClimat
       </div>
 
       <div className="h-[420px] flex-1 overflow-hidden rounded-xl border border-border">
-        <LeafletClimateMap layer={layer} data={data} selected={selected} />
+        <LeafletClimateMap
+          layer={layer}
+          data={data}
+          selected={selected}
+          municipiosData={municipiosData}
+          selectedDeptCode={selectedDeptCode}
+        />
       </div>
     </div>
   )

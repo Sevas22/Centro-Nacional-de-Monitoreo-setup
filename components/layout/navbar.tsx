@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { Search, ChevronDown, Zap, Satellite, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ReportModal } from '@/components/report-modal'
 import { useDashboard, type DashboardFilters } from '@/lib/store/dashboard-context'
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { departments, categoryData } from '@/data/mock'
@@ -75,7 +75,6 @@ function FilterDropdown({
 }
 
 export function Navbar() {
-  const [reportOpen, setReportOpen] = useState(false)
   const { state, setFilter, clearFilters } = useDashboard()
   const [searchInput, setSearchInput] = useState(state.filters.query)
   const debouncedSearch = useDebounce(searchInput, 300)
@@ -135,13 +134,13 @@ export function Navbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
-        <button
-          onClick={() => setReportOpen(true)}
+        <Link
+          href="/reportes"
           className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-info px-3 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
         >
           <Zap className="size-3.5" />
           Generar Reporte IA
-        </button>
+        </Link>
 
         <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-2.5 py-1.5">
           <span className="relative flex size-2">
@@ -151,8 +150,6 @@ export function Navbar() {
           <span className="text-[11px] font-semibold uppercase tracking-wide text-success">En vivo</span>
         </div>
       </div>
-
-      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
     </header>
   )
 }

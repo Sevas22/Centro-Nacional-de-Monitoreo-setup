@@ -28,13 +28,18 @@ export function LeafletClimateMap({
   layer,
   data,
   selected,
+  municipiosData,
+  selectedDeptCode,
 }: {
   layer: MapLayer
   data: Record<string, DeptClimate>
   selected: string
+  municipiosData?: Record<string, DeptClimate>
+  selectedDeptCode?: string
 }) {
   const router = useRouter()
   const [geoJson, setGeoJson] = useState<GeoJsonObject | null>(null)
+  const [municipiosGeoJson, setMunicipiosGeoJson] = useState<{ features: Feature<Geometry>[] } | null>(null)
   const [center, setCenter] = useState({ lat: 4.2, lng: -73.5 })
 
   useEffect(() => {
@@ -43,6 +48,19 @@ export function LeafletClimateMap({
       .then(setGeoJson)
       .catch(() => setGeoJson(null))
   }, [])
+
+  // El geojson de municipios (1.122 features) solo se necesita una vez que el usuario mira el
+  // detalle de un departamento — se carga bajo demanda, no en el arranque del mapa nacional.
+  useEffect(() => {
+    fetch('/geo/municipios.json')
+      .then((r) => r.json())
+      .then((fc: { features: Feature<Geometry>[] }) => setMunicipiosGeoJson(fc))
+      .catch(() => setMunicipiosGeoJson(null))
+  }, [])
+
+  const selectedMunicipioFeatures = municipiosGeoJson?.features.filter(
+    (f) => f.properties?.DPTO_CCDGO === selectedDeptCode,
+  )
 
   return (
     <div className="relative h-full w-full">
@@ -83,6 +101,26 @@ export function LeafletClimateMap({
               const label = climate ? `${deptName}: ${tooltipValue(layer, climate)}` : `${deptName}: sin datos`
               layerInstance.bindTooltip(label, { sticky: true })
               layerInstance.on('click', () => router.push(`/espectro?depto=${encodeURIComponent(deptName)}`))
+            }}
+          />
+        )}
+
+        {selectedMunicipioFeatures && selectedMunicipioFeatures.length > 0 && (
+          <GeoJSON
+            key={`muni-${layer}-${selectedDeptCode}`}
+            data={{ type: 'FeatureCollection', features: selectedMunicipioFeatures } as GeoJsonObject}
+            style={(feature) => {
+              const name = feature?.properties?.MPIO_CNMBR as string
+              const climate = municipiosData?.[name]
+              const color = climate ? colorFor(layer, climate) : '#1e293b'
+              const opts: PathOptions = { fillColor: color, fillOpacity: 0.85, color: '#070b14', weight: 0.6 }
+              return opts
+            }}
+            onEachFeature={(feature: Feature<Geometry>, layerInstance: Layer) => {
+              const name = feature.properties?.MPIO_CNMBR as string
+              const climate = municipiosData?.[name]
+              const label = climate ? `${name}: ${tooltipValue(layer, climate)}` : `${name}: sin datos`
+              layerInstance.bindTooltip(label, { sticky: true })
             }}
           />
         )}

@@ -11,9 +11,11 @@ import { AlertRanking, type DeptAlertSummary } from '@/components/spectrum/alert
 import { ForecastChart } from '@/components/spectrum/forecast-chart'
 import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
 import { departmentCapitals, departmentNames } from '@/lib/spectrum/department-capitals'
+import { departmentDivipola } from '@/lib/spectrum/department-divipola'
+import { municipioCoordinates } from '@/lib/spectrum/municipio-coordinates'
 import { fetchWeatherBatch, type CurrentWeather } from '@/lib/spectrum/weather'
 import { fetchHourlyForecast } from '@/lib/spectrum/forecast'
-import { assessBands, computeRainAttenuation, stabilityStyle } from '@/lib/spectrum/model'
+import { assessBands, deriveClimate, stabilityStyle } from '@/lib/spectrum/model'
 import { computeNationalSnapshot } from '@/lib/spectrum/national'
 import { frequencyBands } from '@/lib/spectrum/bands'
 import { cn } from '@/lib/utils'
@@ -38,10 +40,17 @@ export default async function EspectroPage({
   const { depto } = await searchParams
   const department = depto && departmentNames.includes(depto) ? depto : 'Bogotá D.C.'
   const coords = departmentCoordinates[department]
+  const selectedDeptCode = departmentDivipola[department]
+  const selectedMunicipios = municipioCoordinates.filter((m) => m.deptCode === selectedDeptCode)
 
-  // Una sola petición a Open-Meteo para las 32 capitales — alimenta el mapa, los KPIs y el feed.
+  // Una sola petición a Open-Meteo para las 33 capitales (alimenta el mapa, los KPIs y el feed),
+  // otra para los municipios del departamento seleccionado — mismo patrón, clima real vía batch.
   const allCoords = departmentNames.map((name) => departmentCoordinates[name])
-  const [weatherList, hourly] = await Promise.all([fetchWeatherBatch(allCoords), fetchHourlyForecast(coords.lat, coords.lng)])
+  const [weatherList, municipioWeatherList, hourly] = await Promise.all([
+    fetchWeatherBatch(allCoords),
+    fetchWeatherBatch(selectedMunicipios.map((m) => ({ lat: m.lat, lng: m.lng }))),
+    fetchHourlyForecast(coords.lat, coords.lng),
+  ])
   const weatherByDept: Record<string, CurrentWeather | null> = {}
   departmentNames.forEach((name, i) => (weatherByDept[name] = weatherList[i]))
 
@@ -49,16 +58,17 @@ export default async function EspectroPage({
   for (const name of departmentNames) {
     const weather = weatherByDept[name]
     if (!weather) continue
-    const assessment = assessBands(weather).find((a) => a.band === 'vhf')
-    if (!assessment || assessment.stability === 'no_aplica') continue
-    mapData[name] = {
-      tempC: weather.temperatureC,
-      humidityPct: weather.humidityPct,
-      precipitationMm: weather.precipitationMm,
-      stability: assessment.stability,
-      attenuationDbKm: computeRainAttenuation(12, weather.precipitationMm),
-    }
+    const climate = deriveClimate(weather)
+    if (climate) mapData[name] = climate
   }
+
+  const municipiosData: Record<string, DeptClimate> = {}
+  selectedMunicipios.forEach((m, i) => {
+    const weather = municipioWeatherList[i]
+    if (!weather) return
+    const climate = deriveClimate(weather)
+    if (climate) municipiosData[m.name] = climate
+  })
 
   const snapshot = computeNationalSnapshot(weatherByDept)
   const weather = weatherByDept[department] ?? null
@@ -152,7 +162,12 @@ export default async function EspectroPage({
       >
         <div className="flex flex-col gap-4 xl:flex-row">
           <div className="flex-1">
-            <ClimateMap data={mapData} selected={department} />
+            <ClimateMap
+              data={mapData}
+              selected={department}
+              municipiosData={municipiosData}
+              selectedDeptCode={selectedDeptCode}
+            />
           </div>
           <DepartmentDetailPanel
             department={department}

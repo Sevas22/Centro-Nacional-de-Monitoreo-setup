@@ -118,6 +118,36 @@ model Entity {
   count Int
 }
 
+// Snapshot diario del modelo de estabilidad de espectro por departamento (banda VHF/UHF),
+// calculado a partir de clima real de Open-Meteo. Es histórico puramente derivado —
+// no telemetría de hardware — pensado para poder graficar tendencias y líneas de tiempo.
+model SpectrumSnapshot {
+  id              String   @id @default(cuid())
+  department      String
+  capturedAt      DateTime @default(now())
+  tempC           Float
+  humidityPct     Float
+  precipitationMm Float
+  stability       String
+  attenuationDbKm Float
+  refractivity    Float
+
+  @@index([department, capturedAt])
+}
+
+// Boletín/briefing generado por IA a partir de datos reales ya persistidos (SpectrumSnapshot,
+// GaoSourceItem) — el modelo solo redacta sobre hechos que le pasamos, nunca inventa cifras.
+// sourceSummary guarda cuántas filas de cada fuente se usaron, para poder auditar el boletín.
+model Briefing {
+  id            String   @id @default(cuid())
+  kind          String // 'diario' | 'ejecutivo'
+  content       String
+  sourceSummary Json
+  generatedAt   DateTime @default(now())
+
+  @@index([kind, generatedAt])
+}
+
 // Artículos ingeridos por RSS desde organizaciones independientes de monitoreo
 // de conflicto armado (INDEPAZ, CERAC, PARES). Nunca contenido publicado
 // directamente por un actor armado — solo terceros que reportan/analizan.
