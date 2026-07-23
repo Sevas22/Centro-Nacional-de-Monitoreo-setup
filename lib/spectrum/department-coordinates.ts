@@ -34,4 +34,5 @@ export const departmentCoordinates: Record<string, { lat: number; lng: number }>
   'Guaviare': { lat: 2.5701, lng: -72.6436 },
   'Vaupés': { lat: 1.2536, lng: -70.2342 },
   'Vichada': { lat: 6.1891, lng: -67.4859 },
+  'San Andrés': { lat: 12.5847, lng: -81.7006 },
 }

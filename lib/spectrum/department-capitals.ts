@@ -33,6 +33,8 @@ export const departmentCapitals: Record<string, string> = {
   'Guaviare': 'San José del Guaviare',
   'Vaupés': 'Mitú',
   'Vichada': 'Puerto Carreño',
+  // Coincide exactamente con geoNameToDept en data/mock.ts (así el polígono del GeoJSON conecta).
+  'San Andrés': 'San Andrés',
 }
 
 export const departmentNames = Object.keys(departmentCapitals)

@@ -83,7 +83,11 @@ export default async function EspectroPage({
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border bg-background/40 px-4 py-3">
-        <StatusItem icon={MapPinned} label="Departamentos con datos" value={`${snapshot.totalDepartments}/32`} />
+        <StatusItem
+          icon={MapPinned}
+          label="Departamentos con datos"
+          value={`${snapshot.totalDepartments}/${departmentNames.length}`}
+        />
         <div className="hidden h-8 w-px bg-border sm:block" />
         <StatusItem icon={Clock} label="Última sincronización" value={updatedAt} />
         <div className="hidden h-8 w-px bg-border sm:block" />
