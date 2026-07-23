@@ -11,8 +11,8 @@ interface KPICardProps {
   icon: string
   value: string | number
   label: string
-  change: string
-  changeDir: 'up' | 'down'
+  change?: string
+  changeDir?: 'up' | 'down'
   accent: string
   index?: number
 }
@@ -52,14 +52,16 @@ export function KPICard({ icon, value, label, change, changeDir, accent, index =
         <div className={`flex size-9 items-center justify-center rounded-lg ${a.bg} ${a.text}`}>
           <Icon className="size-4.5" />
         </div>
-        <div
-          className={`flex items-center gap-0.5 text-xs font-semibold ${
-            changeDir === 'up' ? 'text-success' : 'text-destructive'
-          }`}
-        >
-          {changeDir === 'up' ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
-          {change}
-        </div>
+        {change && changeDir && (
+          <div
+            className={`flex items-center gap-0.5 text-xs font-semibold ${
+              changeDir === 'up' ? 'text-success' : 'text-destructive'
+            }`}
+          >
+            {changeDir === 'up' ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
+            {change}
+          </div>
+        )}
       </div>
 
       <p className="relative mt-3 font-mono text-2xl font-bold tabular-nums text-foreground">{display}</p>

@@ -3,6 +3,13 @@ import type { CurrentWeather } from './weather'
 
 export type StabilityLevel = 'baja' | 'media' | 'alta' | 'no_aplica'
 
+export const stabilityStyle: Record<StabilityLevel, { label: string; className: string }> = {
+  alta: { label: 'Alta', className: 'bg-success/15 text-success' },
+  media: { label: 'Media', className: 'bg-warning/15 text-warning' },
+  baja: { label: 'Baja', className: 'bg-destructive/15 text-destructive' },
+  no_aplica: { label: 'No aplica', className: 'bg-accent/60 text-muted-foreground' },
+}
+
 export interface BandAssessment {
   band: BandId
   stability: StabilityLevel
