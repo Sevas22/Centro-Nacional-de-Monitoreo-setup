@@ -1,11 +1,13 @@
-import { Activity, Antenna, Clock, CloudRain, MapPinned, Map as MapIcon } from 'lucide-react'
+import { Activity, Antenna, Clock, CloudRain, ListOrdered, MapPinned, Map as MapIcon } from 'lucide-react'
 import { PageHeader, PageTransition, RealtimeBadge } from '@/components/page-shell'
 import { SectionCard } from '@/components/dashboard/section-card'
 import { KPICard } from '@/components/dashboard/kpi-card'
 import { DepartmentSelect } from '@/components/spectrum/department-select'
+import { AutoRefresh } from '@/components/spectrum/auto-refresh'
 import { ClimateMap, type DeptClimate } from '@/components/spectrum/climate-map'
 import { DepartmentDetailPanel } from '@/components/spectrum/department-detail-panel'
 import { EventFeed } from '@/components/spectrum/event-feed'
+import { AlertRanking, type DeptAlertSummary } from '@/components/spectrum/alert-ranking'
 import { ForecastChart } from '@/components/spectrum/forecast-chart'
 import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
 import { departmentCapitals, departmentNames } from '@/lib/spectrum/department-capitals'
@@ -63,6 +65,16 @@ export default async function EspectroPage({
   const assessments = weather ? assessBands(weather) : null
   const updatedAt = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
 
+  const alertByDept = new Map<string, DeptAlertSummary>()
+  for (const event of snapshot.events) {
+    const entry = alertByDept.get(event.department) ?? { department: event.department, critico: 0, alto: 0, moderado: 0 }
+    entry[event.severity]++
+    alertByDept.set(event.department, entry)
+  }
+  const alertRanking = Array.from(alertByDept.values())
+    .sort((a, b) => b.critico * 3 + b.alto * 2 + b.moderado - (a.critico * 3 + a.alto * 2 + a.moderado))
+    .slice(0, 8)
+
   return (
     <PageTransition>
       <PageHeader
@@ -76,7 +88,8 @@ export default async function EspectroPage({
         <StatusItem icon={Clock} label="Última sincronización" value={updatedAt} />
         <div className="hidden h-8 w-px bg-border sm:block" />
         <StatusItem icon={Activity} label="Eventos activos" value={String(snapshot.events.length)} />
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-4">
+          <AutoRefresh />
           <RealtimeBadge />
         </div>
       </div>
@@ -192,9 +205,15 @@ export default async function EspectroPage({
         </div>
       )}
 
-      <SectionCard title="Eventos detectados por el modelo" icon={<Antenna className="size-4 text-[var(--accent-red)]" />}>
-        <EventFeed events={snapshot.events} />
-      </SectionCard>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+        <SectionCard title="Departamentos en alerta" icon={<ListOrdered className="size-4 text-[var(--accent-orange)]" />}>
+          <AlertRanking items={alertRanking} />
+        </SectionCard>
+
+        <SectionCard title="Eventos detectados por el modelo" icon={<Antenna className="size-4 text-[var(--accent-red)]" />}>
+          <EventFeed events={snapshot.events} />
+        </SectionCard>
+      </div>
     </PageTransition>
   )
 }

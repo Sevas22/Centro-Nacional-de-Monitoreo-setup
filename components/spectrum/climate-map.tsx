@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps'
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
 import { geoNameToDept } from '@/data/mock'
+import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
 import { cn } from '@/lib/utils'
 
 export interface DeptClimate {
@@ -164,7 +165,7 @@ export function ClimateMap({ data, selected }: { data: Record<string, DeptClimat
       </div>
 
       <div
-        className="relative flex-1 overflow-hidden rounded-xl border border-border bg-background/40"
+        className="grid-bg relative flex-1 overflow-hidden rounded-xl border border-border bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),rgba(7,11,20,0.4)_70%)]"
         onMouseLeave={() => setTooltip(null)}
       >
         <ComposableMap
@@ -213,6 +214,32 @@ export function ClimateMap({ data, selected }: { data: Record<string, DeptClimat
               })
             }
           </Geographies>
+
+          {Object.entries(data).map(([name, climate]) => {
+            const coords = departmentCoordinates[name]
+            if (!coords) return null
+            const isCritical = climate.stability === 'baja'
+            return (
+              <Marker key={name} coordinates={[coords.lng, coords.lat]}>
+                <circle
+                  r={isCritical ? 3 : 1.4}
+                  fill={isCritical ? '#ef4444' : '#e5e9f0'}
+                  stroke="#070b14"
+                  strokeWidth={0.6}
+                  opacity={isCritical ? 1 : 0.55}
+                />
+                {isCritical && (
+                  <circle
+                    r={3}
+                    fill="none"
+                    stroke="#ef4444"
+                    strokeWidth={1}
+                    className="origin-center [animation:pulse-ring_2s_infinite]"
+                  />
+                )}
+              </Marker>
+            )
+          })}
         </ComposableMap>
 
         {tooltip && (

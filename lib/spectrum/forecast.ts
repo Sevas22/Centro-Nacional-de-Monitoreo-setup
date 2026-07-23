@@ -23,7 +23,7 @@ export async function fetchHourlyForecast(lat: number, lng: number): Promise<Hou
   url.searchParams.set('forecast_days', '2')
   url.searchParams.set('timezone', 'auto')
 
-  const res = await fetch(url.toString(), { next: { revalidate: 1800 } })
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } })
   if (!res.ok) return []
 
   const data = (await res.json()) as OpenMeteoHourlyResponse

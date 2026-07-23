@@ -23,7 +23,7 @@ export async function fetchCurrentWeather(lat: number, lng: number): Promise<Cur
   url.searchParams.set('timezone', 'auto')
 
   // El clima cambia rápido: cache corto.
-  const res = await fetch(url.toString(), { next: { revalidate: 1800 } })
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } })
   if (!res.ok) return null
 
   const data = (await res.json()) as OpenMeteoForecastResponse
@@ -50,7 +50,7 @@ export async function fetchWeatherBatch(coords: { lat: number; lng: number }[]):
   url.searchParams.set('current', 'temperature_2m,relative_humidity_2m,pressure_msl,precipitation')
   url.searchParams.set('timezone', 'auto')
 
-  const res = await fetch(url.toString(), { next: { revalidate: 1800 } })
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } })
   if (!res.ok) return coords.map(() => null)
 
   const data = (await res.json()) as OpenMeteoForecastResponse[] | OpenMeteoForecastResponse
