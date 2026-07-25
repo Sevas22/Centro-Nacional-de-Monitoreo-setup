@@ -29,39 +29,60 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out
 }
 
-export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
-  const results: NewsIngestResult[] = []
-  const rawItems: RawItem[] = []
-
-  for (const src of newsSources) {
-    if (!src.enabled) continue
-
-    try {
-      const feed = await parser.parseURL(src.feedUrl)
-      let fetched = 0
-      for (const item of feed.items) {
-        if (!item.link || !item.title) continue
-        fetched++
-        rawItems.push({
-          sourceUrl: item.link,
-          title: item.title,
-          summary: (item.contentSnippet ?? item.summary ?? '').slice(0, 800),
-          publishedAt: item.isoDate ? new Date(item.isoDate) : new Date(),
-          source: src.name,
-          category: src.category,
-          tags: (item.categories ?? []).slice(0, 8),
-        })
-      }
-      results.push({ source: `${src.name} (${src.category})`, fetched, new: 0 })
-    } catch (err) {
-      results.push({
-        source: `${src.name} (${src.category})`,
-        fetched: 0,
-        new: 0,
-        error: err instanceof Error ? err.message : 'Error desconocido',
-      })
-    }
+// Algunos feeds (ej. La República) usan <category domain="...">Texto</category> — el parser XML
+// entrega eso como { _: "Texto", $: {...} } en vez de un string plano. Sin esto, Prisma rechaza
+// el insert entero apenas aparece un feed con ese formato.
+function normalizeTag(raw: unknown): string | null {
+  if (typeof raw === 'string') return raw
+  if (raw && typeof raw === 'object' && '_' in raw && typeof (raw as { _: unknown })._ === 'string') {
+    return (raw as { _: string })._
   }
+  return null
+}
+
+export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
+  // Con ~20 fuentes, traerlas una por una agotaría el límite de duración de la función serverless
+  // (10s por defecto en Vercel Hobby) mucho antes de terminar. En paralelo, el tiempo total es el
+  // de la fuente más lenta, no la suma de todas — y una fuente caída no bloquea a las demás.
+  const perSourceResults = await Promise.all(
+    newsSources
+      .filter((src) => src.enabled)
+      .map(async (src) => {
+        try {
+          const feed = await parser.parseURL(src.feedUrl)
+          const items: RawItem[] = []
+          for (const item of feed.items) {
+            if (!item.link || !item.title) continue
+            items.push({
+              sourceUrl: item.link,
+              title: item.title,
+              summary: (item.contentSnippet ?? item.summary ?? '').slice(0, 800),
+              publishedAt: item.isoDate ? new Date(item.isoDate) : new Date(),
+              source: src.name,
+              category: src.category,
+              tags: (item.categories ?? [])
+                .map(normalizeTag)
+                .filter((t): t is string => t !== null)
+                .slice(0, 8),
+            })
+          }
+          return { result: { source: `${src.name} (${src.category})`, fetched: items.length, new: 0 }, items }
+        } catch (err) {
+          return {
+            result: {
+              source: `${src.name} (${src.category})`,
+              fetched: 0,
+              new: 0,
+              error: err instanceof Error ? err.message : 'Error desconocido',
+            },
+            items: [] as RawItem[],
+          }
+        }
+      }),
+  )
+
+  const results = perSourceResults.map((r) => r.result)
+  const rawItems = perSourceResults.flatMap((r) => r.items)
 
   if (rawItems.length === 0) return results
 
