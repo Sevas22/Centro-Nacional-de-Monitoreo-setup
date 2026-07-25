@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '@/lib/db'
 import { departmentNames } from '@/lib/spectrum/department-capitals'
 import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
@@ -102,24 +101,35 @@ ${
 Redacta el ${label} en markdown con exactamente estas secciones: "## Panorama nacional", "## Espectro RF — alertas", "## Fuentes abiertas", "## Noticias críticas", "## Recomendaciones". Sé conciso y profesional, en español. Las recomendaciones deben derivarse únicamente de los datos anteriores.`
 }
 
-export async function generateBriefing(kind: BriefingKind) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY no está configurado en las variables de entorno')
+// Groq (gratis, sin tarjeta) en vez de Anthropic mientras no haya presupuesto para la API paga —
+// mismo prompt y misma regla de "solo datos reales" de abajo, solo cambia el proveedor del modelo.
+async function callGroq(prompt: string): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) throw new Error('GROQ_API_KEY no está configurado en las variables de entorno')
 
-  const context = await gatherContext()
-  const prompt = buildPrompt(context, kind)
-
-  const client = new Anthropic({ apiKey })
-  const message = await client.messages.create({
-    model: 'claude-sonnet-5',
-    max_tokens: 1500,
-    messages: [{ role: 'user', content: prompt }],
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   })
 
-  const content = message.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n')
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Groq API respondió ${res.status}: ${errText}`)
+  }
+
+  const data = (await res.json()) as { choices: { message: { content: string } }[] }
+  return data.choices[0]?.message.content ?? ''
+}
+
+export async function generateBriefing(kind: BriefingKind) {
+  const context = await gatherContext()
+  const prompt = buildPrompt(context, kind)
+  const content = await callGroq(prompt)
 
   return prisma.briefing.create({
     data: {
