@@ -1,11 +1,11 @@
-name: Ingesta de noticias (cada 3 horas)
+name: Ingesta de noticias (cada 15 minutos)
 
 # Vercel Hobby solo permite cron jobs de una vez al dia (ver vercel.json), asi que esta
 # ingesta mas frecuente se dispara desde GitHub Actions en vez de Vercel Cron: llama al
 # mismo endpoint /api/news/ingest que ya existe, protegido por el mismo CRON_SECRET.
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch: {}
 
 jobs:
