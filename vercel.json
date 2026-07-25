@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/news/ingest",
-      "schedule": "0 */3 * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }
