@@ -4,27 +4,20 @@ import { useMemo, useState } from 'react'
 import { MapPin } from 'lucide-react'
 import { SectionCard } from '@/components/dashboard/section-card'
 import { ColombiaMap } from '@/components/dashboard/colombia-map'
-import { departments } from '@/data/mock'
+import type { DeptActivity } from '@/lib/news/aggregate'
 import { activityColor, activityLabel } from '@/lib/style-maps'
-import { useDashboard } from '@/lib/store/dashboard-context'
 
-export function ColombiaMapCard() {
-  const [selected, setSelectedLocal] = useState<string | null>(null)
-  const { selectDepartment } = useDashboard()
-
-  const setSelected = (name: string | null) => {
-    setSelectedLocal(name)
-    selectDepartment(name)
-  }
+export function ColombiaMapCard({ deptActivity }: { deptActivity: DeptActivity[] }) {
+  const [selected, setSelected] = useState<string | null>(null)
 
   const totals = useMemo(() => {
-    const total = departments.reduce((acc, d) => acc + d.newsCount, 0)
-    const active = departments.filter((d) => d.level !== 'low').length
-    const critical = departments.filter((d) => d.level === 'critical')
+    const total = deptActivity.reduce((acc, d) => acc + d.newsCount, 0)
+    const active = deptActivity.filter((d) => d.level !== 'low').length
+    const critical = deptActivity.filter((d) => d.level === 'critical')
     return { total, active, critical }
-  }, [])
+  }, [deptActivity])
 
-  const selectedDept = departments.find((d) => d.name === selected)
+  const selectedDept = deptActivity.find((d) => d.name === selected)
 
   return (
     <SectionCard
@@ -37,7 +30,7 @@ export function ColombiaMapCard() {
       }
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_200px]">
-        <ColombiaMap onSelectDept={setSelected} />
+        <ColombiaMap deptActivity={deptActivity} onSelectDept={setSelected} />
 
         <div className="flex flex-col gap-3">
           <div className="rounded-xl border border-border bg-background/40 p-3">
@@ -68,7 +61,7 @@ export function ColombiaMapCard() {
             <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">Alerta crítica</p>
             <ul className="flex flex-col gap-2">
               {totals.critical.map((d) => (
-                <li key={d.id} className="flex items-center justify-between text-xs">
+                <li key={d.name} className="flex items-center justify-between text-xs">
                   <span className="text-foreground">{d.name}</span>
                   <span className="font-mono font-semibold text-[var(--accent-red)]">{d.newsCount}</span>
                 </li>

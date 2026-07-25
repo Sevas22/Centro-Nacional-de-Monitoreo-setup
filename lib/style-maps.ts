@@ -1,4 +1,4 @@
-import type { ActivityLevel, AlertSeverity, Importance, Sentiment } from '@/lib/types'
+import type { ActivityLevel, Importance, Sentiment } from '@/lib/types'
 
 export const accentMap: Record<string, { text: string; bg: string; border: string; hex: string }> = {
   blue: { text: 'text-primary', bg: 'bg-primary/10', border: 'bg-primary', hex: '#3b82f6' },
@@ -39,11 +39,4 @@ export const activityLabel: Record<ActivityLevel, string> = {
   medium: 'Media',
   high: 'Alta',
   critical: 'Crítica',
-}
-
-export const severityStyle: Record<AlertSeverity, { label: string; className: string; dot: string }> = {
-  critical: { label: 'Crítica', className: 'bg-destructive/15 text-destructive', dot: 'bg-destructive' },
-  high: { label: 'Alta', className: 'bg-warning/15 text-warning', dot: 'bg-warning' },
-  medium: { label: 'Media', className: 'bg-primary/15 text-primary', dot: 'bg-primary' },
-  low: { label: 'Baja', className: 'bg-success/15 text-success', dot: 'bg-success' },
 }

@@ -20,6 +20,6 @@ export async function proxy(request: NextRequest) {
 // /login en vez de ejecutar el handler real.
 export const config = {
   matcher: [
-    '/((?!login|register|api/login|api/register|api/logout|api/gao|api/spectrum|api/briefings|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|json|ico|webp)$).*)',
+    '/((?!login|register|api/login|api/register|api/logout|api/gao|api/spectrum|api/briefings|api/news|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|json|ico|webp)$).*)',
   ],
 }

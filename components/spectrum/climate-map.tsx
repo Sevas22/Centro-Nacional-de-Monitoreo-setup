@@ -65,7 +65,9 @@ export function ClimateMap({
         </div>
       </div>
 
-      <div className="h-[420px] flex-1 overflow-hidden rounded-xl border border-border">
+      {/* lg:flex-1 (no flex-1 a secas): en modo columna (angosto) "flex-1" fija flex-basis:0 en el
+          eje vertical y colapsa la altura pese al h-[560px]; solo debe crecer en modo fila (lg+). */}
+      <div className="h-[560px] lg:flex-1 overflow-hidden rounded-xl border border-border">
         <LeafletClimateMap
           layer={layer}
           data={data}

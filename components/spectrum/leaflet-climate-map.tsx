@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, useMap, useMapEvents } from 'react-leaflet'
+import { geoJSON as leafletGeoJSON } from 'leaflet'
 import type { Feature, Geometry, GeoJsonObject } from 'geojson'
 import type { Layer, PathOptions } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { geoNameToDept } from '@/data/mock'
+import { geoNameToDept } from '@/data/geo-reference'
 import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
 import { colorFor, tooltipValue, type DeptClimate, type MapLayer } from '@/lib/spectrum/map-colors'
 
@@ -17,6 +18,22 @@ function MapEvents({ onMove }: { onMove: (lat: number, lng: number) => void }) {
       onMove(c.lat, c.lng)
     },
   })
+  return null
+}
+
+// Sin esto, el mapa se queda en el zoom nacional (~5.5) aunque estés viendo el detalle de un
+// departamento — con hasta 125 municipios encimados a ese zoom cada polígono mide unos pocos
+// píxeles y se ve como una cuadrícula de color en vez de un mapa real. Al seleccionar un
+// departamento, la vista se acerca a sus límites reales.
+function FitToSelection({ features }: { features: Feature<Geometry>[] | undefined }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!features || features.length === 0) return
+    const bounds = leafletGeoJSON({ type: 'FeatureCollection', features } as GeoJsonObject).getBounds()
+    if (bounds.isValid()) {
+      map.flyToBounds(bounds, { paddingTopLeft: [24, 24], paddingBottomRight: [24, 24], maxZoom: 9, duration: 0.6 })
+    }
+  }, [features, map])
   return null
 }
 
@@ -58,8 +75,9 @@ export function LeafletClimateMap({
       .catch(() => setMunicipiosGeoJson(null))
   }, [])
 
-  const selectedMunicipioFeatures = municipiosGeoJson?.features.filter(
-    (f) => f.properties?.DPTO_CCDGO === selectedDeptCode,
+  const selectedMunicipioFeatures = useMemo(
+    () => municipiosGeoJson?.features.filter((f) => f.properties?.DPTO_CCDGO === selectedDeptCode),
+    [municipiosGeoJson, selectedDeptCode],
   )
 
   return (
@@ -113,7 +131,7 @@ export function LeafletClimateMap({
               const name = feature?.properties?.MPIO_CNMBR as string
               const climate = municipiosData?.[name]
               const color = climate ? colorFor(layer, climate) : '#1e293b'
-              const opts: PathOptions = { fillColor: color, fillOpacity: 0.85, color: '#070b14', weight: 0.6 }
+              const opts: PathOptions = { fillColor: color, fillOpacity: 0.78, color: '#070b14', weight: 0.5 }
               return opts
             }}
             onEachFeature={(feature: Feature<Geometry>, layerInstance: Layer) => {
@@ -145,6 +163,7 @@ export function LeafletClimateMap({
           )
         })}
 
+        <FitToSelection features={selectedMunicipioFeatures} />
         <MapEvents onMove={(lat, lng) => setCenter({ lat, lng })} />
       </MapContainer>
 

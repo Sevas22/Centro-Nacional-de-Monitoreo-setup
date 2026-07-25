@@ -35,7 +35,7 @@ export function DepartmentNewsFeed({ articles }: { articles: NewsArticle[] }) {
           ))}
         </AnimatePresence>
       </div>
-      <NewsDetailModal article={selected} onClose={() => setSelected(null)} />
+      <NewsDetailModal article={selected} onClose={() => setSelected(null)} allArticles={articles} />
     </>
   )
 }

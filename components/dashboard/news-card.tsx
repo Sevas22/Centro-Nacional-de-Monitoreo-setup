@@ -1,7 +1,7 @@
 'use client'
 
 import { Sparkles, MapPin, Clock, Radio } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatTimeAgo } from '@/lib/utils'
 import type { NewsArticle } from '@/lib/types'
 import { importanceBorder, sentimentStyle } from '@/lib/style-maps'
 
@@ -54,7 +54,9 @@ export function NewsCard({ article, onClick, isNew }: NewsCardProps) {
         </span>
         <span className="ml-auto inline-flex items-center gap-1">
           <Clock className="size-3" />
-          {article.time}
+          {/* Cambia entre el render del servidor y la hidratación del cliente por diseño (es
+              "hace X min" real) — sin esto React marca un falso mismatch de hidratación. */}
+          <span suppressHydrationWarning>{formatTimeAgo(article.publishedAt)}</span>
         </span>
       </div>
     </button>

@@ -19,27 +19,6 @@ enum Sentiment {
   neutral
 }
 
-enum ActivityLevel {
-  low
-  medium
-  high
-  critical
-}
-
-enum AlertSeverity {
-  critical
-  high
-  medium
-  low
-}
-
-enum EntityType {
-  person
-  org
-  company
-  place
-}
-
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -49,73 +28,30 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
-model Department {
-  id             String         @id
-  name           String
-  newsCount      Int
-  level          ActivityLevel
-  municipalities Municipality[]
-}
-
-model Municipality {
-  id            String        @id
-  name          String
-  departmentId  String
-  department    Department    @relation(fields: [departmentId], references: [id])
-  newsCount     Int
-  activityLevel ActivityLevel
-
-  @@index([departmentId])
-}
-
+// Artículos ingeridos por RSS de medios colombianos reales (El Tiempo, Semana, Infobae —
+// ver lib/news/sources.ts). department se detecta por keyword-match (lib/news/departments.ts,
+// 'Nacional' si no hay coincidencia); sentiment/importance/aiSummary los asigna Claude Haiku
+// a partir del título+resumen reales (lib/ai/classify-article.ts) — nunca se inventan hechos.
+// municipality queda sin poblar (no hay detección a ese nivel todavía) en vez de fabricarlo.
 model NewsArticle {
-  id             String     @id
-  title          String
-  summary        String
-  fullText       String?
-  source         String
-  sourceUrl      String?
-  department     String
-  municipality   String
-  time           String
-  category       String
-  importance     Importance
-  sentiment      Sentiment
-  sentimentScore Float?
-  riskScore      Float?
-  viewCount      Int?
-  isBreaking     Boolean    @default(false)
-  aiSummary      String
-  tags           String[]
-  entities       Json?
-  createdAt      DateTime   @default(now())
-}
+  id           String     @id @default(cuid())
+  title        String
+  summary      String
+  fullText     String?
+  source       String
+  sourceUrl    String     @unique
+  department   String
+  municipality String?
+  publishedAt  DateTime
+  category     String
+  importance   Importance
+  sentiment    Sentiment
+  aiSummary    String
+  tags         String[]
+  createdAt    DateTime   @default(now())
 
-model NewsSource {
-  id          String  @id
-  name        String
-  type        String
-  region      String
-  newsToday   Int
-  uptime      Float
-  latency     Int
-  lastFetchAt String?
-}
-
-model AlertItem {
-  id          String        @id
-  title       String
-  description String
-  severity    AlertSeverity
-  time        String
-  active      Boolean       @default(true)
-}
-
-model Entity {
-  id    String     @id
-  name  String
-  type  EntityType
-  count Int
+  @@index([department])
+  @@index([publishedAt])
 }
 
 // Snapshot diario del modelo de estabilidad de espectro por departamento (banda VHF/UHF),

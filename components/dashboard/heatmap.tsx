@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { heatmapData, heatmapDepts } from '@/data/mock'
+import type { HeatmapCell } from '@/lib/types'
 
 // Interpolate dark green -> yellow -> red
 function heatColor(value: number) {
@@ -20,20 +20,24 @@ function heatColor(value: number) {
   return `rgb(${r},${g},${b})`
 }
 
-export function Heatmap() {
+export function Heatmap({ depts, data }: { depts: string[]; data: HeatmapCell[] }) {
   const [hover, setHover] = useState<{ dept: string; hour: number; value: number } | null>(null)
+
+  if (depts.length === 0) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">Sin datos suficientes todavía.</p>
+  }
 
   return (
     <div className="relative">
       <div className="overflow-x-auto pb-1">
         <div className="min-w-[640px]">
           <div className="flex flex-col gap-1">
-            {heatmapDepts.map((dept) => (
+            {depts.map((dept) => (
               <div key={dept} className="flex items-center gap-2">
                 <span className="w-28 shrink-0 truncate text-right text-[11px] text-muted-foreground">{dept}</span>
                 <div className="flex flex-1 gap-1">
                   {Array.from({ length: 24 }, (_, hour) => {
-                    const cell = heatmapData.find((c) => c.dept === dept && c.hour === hour)!
+                    const cell = data.find((c) => c.dept === dept && c.hour === hour)!
                     return (
                       <div
                         key={hour}

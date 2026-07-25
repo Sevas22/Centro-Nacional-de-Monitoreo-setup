@@ -14,13 +14,22 @@ interface GaoContextItem {
   mentionedGroups: string[]
 }
 
+interface NewsContextItem {
+  source: string
+  title: string
+  department: string
+  publishedAt: Date
+}
+
 interface BriefingContext {
   national: NationalSnapshot
   gaoItems: GaoContextItem[]
+  criticalNews: NewsContextItem[]
   historicalSnapshotCount: number
 }
 
-/** Reúne solo datos ya reales (clima real vía modelo ITU-R + RSS ya ingerido) — nada se calcula para la ocasión. */
+/** Reúne solo datos ya reales (clima real vía modelo ITU-R, RSS de GAO y de noticias ya
+ * ingeridos) — nada se calcula para la ocasión. */
 async function gatherContext(): Promise<BriefingContext> {
   const coords = departmentNames.map((name) => departmentCoordinates[name])
   const weatherList = await fetchWeatherBatch(coords)
@@ -29,21 +38,27 @@ async function gatherContext(): Promise<BriefingContext> {
   const national = computeNationalSnapshot(weatherByDept)
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const [gaoItems, historicalSnapshotCount] = await Promise.all([
+  const [gaoItems, criticalNews, historicalSnapshotCount] = await Promise.all([
     prisma.gaoSourceItem.findMany({
       where: { publishedAt: { gte: since } },
       orderBy: { publishedAt: 'desc' },
       take: 40,
       select: { source: true, title: true, publishedAt: true, mentionedGroups: true },
     }),
+    prisma.newsArticle.findMany({
+      where: { publishedAt: { gte: since }, importance: 'critical' },
+      orderBy: { publishedAt: 'desc' },
+      take: 25,
+      select: { source: true, title: true, department: true, publishedAt: true },
+    }),
     prisma.spectrumSnapshot.count(),
   ])
 
-  return { national, gaoItems, historicalSnapshotCount }
+  return { national, gaoItems, criticalNews, historicalSnapshotCount }
 }
 
 function buildPrompt(context: BriefingContext, kind: BriefingKind): string {
-  const { national, gaoItems } = context
+  const { national, gaoItems, criticalNews } = context
   const label = kind === 'diario' ? 'boletín diario' : 'briefing ejecutivo'
 
   const eventsText =
@@ -77,7 +92,14 @@ ${eventsText}
 FUENTES ABIERTAS — ítems RSS de organizaciones independientes de monitoreo de conflicto armado (INDEPAZ/PARES, últimas 24h; son terceros que reportan/analizan, nunca contenido publicado por un actor armado):
 ${gaoText}
 
-Redacta el ${label} en markdown con exactamente estas secciones: "## Panorama nacional", "## Espectro RF — alertas", "## Fuentes abiertas", "## Recomendaciones". Sé conciso y profesional, en español. Las recomendaciones deben derivarse únicamente de los datos anteriores.`
+NOTICIAS DE MEDIOS COLOMBIANOS CLASIFICADAS COMO CRÍTICAS (El Tiempo/Semana/Infobae, últimas 24h, clasificación real por IA sobre título+resumen):
+${
+  criticalNews
+    .map((n) => `- (${n.source}, ${n.department}) ${n.title}`)
+    .join('\n') || 'Sin noticias críticas en las últimas 24 horas.'
+}
+
+Redacta el ${label} en markdown con exactamente estas secciones: "## Panorama nacional", "## Espectro RF — alertas", "## Fuentes abiertas", "## Noticias críticas", "## Recomendaciones". Sé conciso y profesional, en español. Las recomendaciones deben derivarse únicamente de los datos anteriores.`
 }
 
 export async function generateBriefing(kind: BriefingKind) {
@@ -107,6 +129,7 @@ export async function generateBriefing(kind: BriefingKind) {
         departmentsWithData: context.national.totalDepartments,
         eventCount: context.national.events.length,
         gaoItemCount: context.gaoItems.length,
+        criticalNewsCount: context.criticalNews.length,
         historicalSnapshotCount: context.historicalSnapshotCount,
       },
     },

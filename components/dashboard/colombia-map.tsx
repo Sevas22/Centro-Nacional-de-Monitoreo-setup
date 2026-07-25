@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
-import { departments, geoNameToDept, majorCities } from '@/data/mock'
+import { geoNameToDept, majorCities } from '@/data/geo-reference'
 import { activityColor, activityLabel } from '@/lib/style-maps'
 import type { ActivityLevel } from '@/lib/types'
+import type { DeptActivity } from '@/lib/news/aggregate'
 import { useToast } from '@/components/toast-provider'
-
-const deptByName = new Map(departments.map((d) => [d.name, d]))
 
 const legend: { level: ActivityLevel }[] = [
   { level: 'low' },
@@ -16,7 +15,14 @@ const legend: { level: ActivityLevel }[] = [
   { level: 'critical' },
 ]
 
-export function ColombiaMap({ onSelectDept }: { onSelectDept?: (name: string) => void }) {
+export function ColombiaMap({
+  deptActivity,
+  onSelectDept,
+}: {
+  deptActivity: DeptActivity[]
+  onSelectDept?: (name: string) => void
+}) {
+  const deptByName = new Map(deptActivity.map((d) => [d.name, d]))
   const [tooltip, setTooltip] = useState<{ x: number; y: number; name: string; count: number } | null>(null)
   const { toast } = useToast()
 

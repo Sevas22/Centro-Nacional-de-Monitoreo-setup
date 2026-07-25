@@ -13,7 +13,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { hourlyNews, categoryData, sentimentData, topDepartmentsBar, newsSources } from '@/data/mock'
 import { activityColor } from '@/lib/style-maps'
 
 const axisStyle = { fontSize: 10, fill: '#7c8aa5' }
@@ -36,10 +35,10 @@ function DarkTooltip({ active, payload, label, suffix }: any) {
   )
 }
 
-export function HourlyChart() {
+export function HourlyChart({ data }: { data: { hour: string; count: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <AreaChart data={hourlyNews} margin={{ top: 5, right: 8, left: -18, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 5, right: 8, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id="hourlyFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.4} />
@@ -55,16 +54,16 @@ export function HourlyChart() {
   )
 }
 
-export function TopDeptsChart() {
-  const max = Math.max(...topDepartmentsBar.map((d) => d.count))
+export function TopDeptsChart({ data }: { data: { name: string; count: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.count))
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={topDepartmentsBar} layout="vertical" margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
         <XAxis type="number" hide />
         <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#cbd5e1' }} tickLine={false} axisLine={false} width={92} />
         <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
         <Bar dataKey="count" name="noticias" radius={[0, 4, 4, 0]} barSize={16}>
-          {topDepartmentsBar.map((d, i) => {
+          {data.map((d, i) => {
             const ratio = d.count / max
             const color = ratio > 0.75 ? '#dc2626' : ratio > 0.5 ? '#ea580c' : ratio > 0.3 ? '#f59e0b' : '#10b981'
             return <Cell key={i} fill={color} />
@@ -75,25 +74,28 @@ export function TopDeptsChart() {
   )
 }
 
-export function SentimentDonut() {
+export function SentimentDonut({ data }: { data: { name: string; value: number; color: string }[] }) {
+  const total = data.reduce((sum, s) => sum + s.value, 0)
   return (
     <div className="flex items-center gap-4">
       <ResponsiveContainer width="55%" height={180}>
         <PieChart>
-          <Pie data={sentimentData} dataKey="value" nameKey="name" innerRadius={45} outerRadius={72} paddingAngle={3} stroke="none">
-            {sentimentData.map((s, i) => (
+          <Pie data={data} dataKey="value" nameKey="name" innerRadius={45} outerRadius={72} paddingAngle={3} stroke="none">
+            {data.map((s, i) => (
               <Cell key={i} fill={s.color} />
             ))}
           </Pie>
-          <Tooltip content={<DarkTooltip suffix="%" />} />
+          <Tooltip content={<DarkTooltip />} />
         </PieChart>
       </ResponsiveContainer>
       <ul className="flex flex-col gap-2.5">
-        {sentimentData.map((s) => (
+        {data.map((s) => (
           <li key={s.name} className="flex items-center gap-2">
             <span className="size-2.5 rounded-full" style={{ backgroundColor: s.color }} />
             <span className="text-xs text-muted-foreground">{s.name}</span>
-            <span className="ml-auto font-mono text-xs font-semibold text-foreground">{s.value}%</span>
+            <span className="ml-auto font-mono text-xs font-semibold text-foreground">
+              {total > 0 ? Math.round((s.value / total) * 100) : 0}%
+            </span>
           </li>
         ))}
       </ul>
@@ -101,10 +103,10 @@ export function SentimentDonut() {
   )
 }
 
-export function CategoryChart() {
+export function CategoryChart({ data }: { data: { category: string; count: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={categoryData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
         <XAxis dataKey="category" tick={{ fontSize: 9, fill: '#7c8aa5' }} tickLine={false} axisLine={false} angle={-30} textAnchor="end" height={50} interval={0} />
         <YAxis tick={axisStyle} tickLine={false} axisLine={false} width={36} />
         <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
@@ -114,8 +116,7 @@ export function CategoryChart() {
   )
 }
 
-export function SourcesChart() {
-  const data = [...newsSources].sort((a, b) => b.newsToday - a.newsToday).slice(0, 8).map((s) => ({ name: s.name, count: s.newsToday }))
+export function SourcesChart({ data }: { data: { name: string; count: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data} layout="vertical" margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>

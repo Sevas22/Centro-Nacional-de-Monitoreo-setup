@@ -10,20 +10,25 @@ import { RefreshCw } from 'lucide-react'
  * no solo repinta lo mismo. */
 export function AutoRefresh({ intervalMs = 60000 }: { intervalMs?: number }) {
   const router = useRouter()
-  const [secondsLeft, setSecondsLeft] = useState(Math.round(intervalMs / 1000))
+  const totalSeconds = Math.round(intervalMs / 1000)
+  const [secondsLeft, setSecondsLeft] = useState(totalSeconds)
 
   useEffect(() => {
     const tick = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          router.refresh()
-          return Math.round(intervalMs / 1000)
-        }
-        return s - 1
-      })
+      setSecondsLeft((s) => (s <= 1 ? 0 : s - 1))
     }, 1000)
     return () => clearInterval(tick)
-  }, [router, intervalMs])
+  }, [])
+
+  // router.refresh() dispara un setState en el Router mientras se resuelve el updater de
+  // secondsLeft si se llama ahí mismo — React lo marca como "setState en render de otro
+  // componente" y puede dejar boundaries de Suspense (p.ej. el navbar) atascados sin activar.
+  // Aislarlo en su propio efecto, disparado por el cambio de secondsLeft, evita esa colisión.
+  useEffect(() => {
+    if (secondsLeft !== 0) return
+    router.refresh()
+    setSecondsLeft(totalSeconds)
+  }, [secondsLeft, totalSeconds, router])
 
   return (
     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">

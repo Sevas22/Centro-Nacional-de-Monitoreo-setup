@@ -11,6 +11,10 @@
     {
       "path": "/api/briefings/generate",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/news/ingest",
+      "schedule": "0 */3 * * *"
     }
   ]
 }

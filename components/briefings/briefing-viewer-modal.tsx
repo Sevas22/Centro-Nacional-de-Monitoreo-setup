@@ -12,6 +12,7 @@ export interface BriefingSummary {
     departmentsWithData: number
     eventCount: number
     gaoItemCount: number
+    criticalNewsCount?: number
     historicalSnapshotCount: number
   }
 }

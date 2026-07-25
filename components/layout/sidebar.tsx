@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
-  Map,
   Building2,
   MapPin,
   TrendingUp,
@@ -29,33 +28,44 @@ type NavItem = {
   badge?: { count: number; tone: 'blue' | 'red' }
 }
 
-const groups: { title: string; items: NavItem[] }[] = [
-  {
-    title: 'Navegación',
-    items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Mapa Nacional', href: '/mapa', icon: Map },
-      { label: 'Departamentos', href: '/departamentos', icon: Building2 },
-      { label: 'Municipios', href: '/municipios', icon: MapPin },
-      { label: 'Trending Topics', href: '/trending', icon: TrendingUp, badge: { count: 23, tone: 'blue' } },
-    ],
-  },
-  {
-    title: 'Análisis',
-    items: [
-      { label: 'Reportes', href: '/reportes', icon: FileText },
-      { label: 'Alertas', href: '/alertas', icon: Bell, badge: { count: 5, tone: 'red' } },
-      { label: 'Fuentes', href: '/fuentes', icon: Radio },
-      { label: 'Análisis IA', href: '/analisis-ia', icon: BrainCircuit },
-      { label: 'Monitoreo GAO', href: '/gao', icon: Shield },
-      { label: 'Espectro RF', href: '/espectro', icon: Antenna },
-    ],
-  },
-  {
-    title: 'Sistema',
-    items: [{ label: 'Configuración', href: '/configuracion', icon: Settings }],
-  },
-]
+function buildGroups(trendingCount: number, alertsCount: number): { title: string; items: NavItem[] }[] {
+  return [
+    {
+      title: 'Navegación',
+      items: [
+        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { label: 'Departamentos', href: '/departamentos', icon: Building2 },
+        { label: 'Municipios', href: '/municipios', icon: MapPin },
+        {
+          label: 'Trending Topics',
+          href: '/trending',
+          icon: TrendingUp,
+          badge: trendingCount > 0 ? { count: trendingCount, tone: 'blue' } : undefined,
+        },
+      ],
+    },
+    {
+      title: 'Análisis',
+      items: [
+        { label: 'Reportes', href: '/reportes', icon: FileText },
+        {
+          label: 'Alertas',
+          href: '/alertas',
+          icon: Bell,
+          badge: alertsCount > 0 ? { count: alertsCount, tone: 'red' } : undefined,
+        },
+        { label: 'Fuentes', href: '/fuentes', icon: Radio },
+        { label: 'Análisis IA', href: '/analisis-ia', icon: BrainCircuit },
+        { label: 'Monitoreo GAO', href: '/gao', icon: Shield },
+        { label: 'Espectro RF', href: '/espectro', icon: Antenna },
+      ],
+    },
+    {
+      title: 'Sistema',
+      items: [{ label: 'Configuración', href: '/configuracion', icon: Settings }],
+    },
+  ]
+}
 
 function initials(name: string) {
   const base = name.includes('@') ? name.split('@')[0] : name
@@ -66,9 +76,18 @@ function initials(name: string) {
     .join('')
 }
 
-export function Sidebar({ username }: { username: string }) {
+export function Sidebar({
+  username,
+  trendingCount,
+  alertsCount,
+}: {
+  username: string
+  trendingCount: number
+  alertsCount: number
+}) {
   const pathname = usePathname()
   const [loggingOut, setLoggingOut] = useState(false)
+  const groups = buildGroups(trendingCount, alertsCount)
 
   async function handleLogout() {
     setLoggingOut(true)

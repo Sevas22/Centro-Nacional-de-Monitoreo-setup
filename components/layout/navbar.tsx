@@ -2,18 +2,51 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Search, ChevronDown, Zap, Satellite, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useDashboard, type DashboardFilters } from '@/lib/store/dashboard-context'
 import { useDebounce } from '@/lib/hooks/use-debounce'
-import { departments, categoryData } from '@/data/mock'
+import { departmentNames } from '@/lib/spectrum/department-capitals'
+import { newsSources } from '@/lib/news/sources'
+import { dateRangeOptions } from '@/lib/news/query'
 
-const filterFields: { field: keyof DashboardFilters; label: string; options: string[] }[] = [
-  { field: 'dateRange', label: 'Fecha', options: ['Hoy', 'Ayer', 'Últimos 7 días', 'Últimos 30 días'] },
-  { field: 'source', label: 'Fuentes', options: ['Todas', 'Prensa', 'Radio', 'Revista', 'Digital'] },
-  { field: 'department', label: 'Departamento', options: ['Todos', ...departments.map((d) => d.name)] },
-  { field: 'category', label: 'Categoría', options: ['Todas', ...categoryData.map((c) => c.category)] },
-  { field: 'sentiment', label: 'Sentimiento', options: ['Todos', 'Positivo', 'Negativo', 'Neutral'] },
+const sourceNames = [...new Set(newsSources.map((s) => s.name))]
+const categoryNames = [...new Set(newsSources.map((s) => s.category))]
+
+// Los filtros viven en la URL (?range=&source=&department=&category=&sentiment=&q=), no en un
+// Context de React — así la página que corresponda (hoy: /dashboard) puede leerlos en el
+// servidor y filtrar de verdad con Prisma, en vez de solo esconder tarjetas ya cargadas.
+const filterFields: { param: string; label: string; options: { value: string; label: string }[] }[] = [
+  { param: 'range', label: 'Fecha', options: dateRangeOptions.map((o) => ({ value: o.value, label: o.label })) },
+  {
+    param: 'source',
+    label: 'Fuentes',
+    options: [{ value: 'Todas', label: 'Todas' }, ...sourceNames.map((s) => ({ value: s, label: s }))],
+  },
+  {
+    param: 'department',
+    label: 'Departamento',
+    options: [
+      { value: 'Todos', label: 'Todos' },
+      { value: 'Nacional', label: 'Nacional' },
+      ...departmentNames.map((d) => ({ value: d, label: d })),
+    ],
+  },
+  {
+    param: 'category',
+    label: 'Categoría',
+    options: [{ value: 'Todas', label: 'Todas' }, ...categoryNames.map((c) => ({ value: c, label: c }))],
+  },
+  {
+    param: 'sentiment',
+    label: 'Sentimiento',
+    options: [
+      { value: 'Todos', label: 'Todos' },
+      { value: 'Positivo', label: 'Positivo' },
+      { value: 'Negativo', label: 'Negativo' },
+      { value: 'Neutral', label: 'Neutral' },
+    ],
+  },
 ]
 
 function FilterDropdown({
@@ -23,12 +56,13 @@ function FilterDropdown({
   onChange,
 }: {
   label: string
-  options: string[]
+  options: { value: string; label: string }[]
   value: string
   onChange: (value: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const current = options.find((o) => o.value === value)?.label ?? options[0].label
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -48,24 +82,26 @@ function FilterDropdown({
         )}
       >
         <span className="text-muted-foreground">{label}:</span>
-        <span className="max-w-[110px] truncate text-foreground">{value}</span>
+        <span className="max-w-[110px] truncate text-foreground">{current}</span>
         <ChevronDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1.5 max-h-72 min-w-[180px] overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-2xl">
           {options.map((opt) => (
             <button
-              key={opt}
+              key={opt.value}
               onClick={() => {
-                onChange(opt)
+                onChange(opt.value)
                 setOpen(false)
               }}
               className={cn(
                 'flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-xs transition-colors',
-                value === opt ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                value === opt.value
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
               )}
             >
-              {opt}
+              {opt.label}
             </button>
           ))}
         </div>
@@ -75,20 +111,34 @@ function FilterDropdown({
 }
 
 export function Navbar() {
-  const { state, setFilter, clearFilters } = useDashboard()
-  const [searchInput, setSearchInput] = useState(state.filters.query)
-  const debouncedSearch = useDebounce(searchInput, 300)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
+  const debouncedSearch = useDebounce(searchInput, 400)
+  // /dashboard es force-dynamic (pega contra Prisma en cada navegación), así que un router.push
+  // tarda en resolver. Si "Limpiar" navega y justo después el efecto de abajo dispara su propio
+  // push, puede leer un searchParams todavía viejo (de antes de limpiar) y resucitar los filtros
+  // que se acababan de borrar. Este flag hace que ese único push post-limpiar se salte.
+  const skipNextSyncRef = useRef(false)
+
+  function setParam(key: string, value: string, defaultValue?: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (!value || value === defaultValue) params.delete(key)
+    else params.set(key, value)
+    router.push(params.size > 0 ? `${pathname}?${params.toString()}` : pathname)
+  }
 
   useEffect(() => {
-    setFilter('query', debouncedSearch)
-  }, [debouncedSearch, setFilter])
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false
+      return
+    }
+    if (debouncedSearch !== (searchParams.get('q') ?? '')) setParam('q', debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
 
-  const hasActiveFilters =
-    state.filters.department !== 'Todos' ||
-    state.filters.category !== 'Todas' ||
-    state.filters.sentiment !== 'Todos' ||
-    state.filters.source !== 'Todas' ||
-    state.filters.query !== ''
+  const hasActiveFilters = [...searchParams.keys()].length > 0
 
   return (
     <header className="fixed inset-x-0 left-[220px] top-0 z-30 flex h-[58px] items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-xl">
@@ -112,18 +162,19 @@ export function Navbar() {
       <div className="hidden flex-1 items-center gap-1.5 xl:flex">
         {filterFields.map((f) => (
           <FilterDropdown
-            key={f.field}
+            key={f.param}
             label={f.label}
             options={f.options}
-            value={state.filters[f.field]}
-            onChange={(value) => setFilter(f.field, value)}
+            value={searchParams.get(f.param) ?? f.options[0].value}
+            onChange={(value) => setParam(f.param, value, f.options[0].value)}
           />
         ))}
         {hasActiveFilters && (
           <button
             onClick={() => {
-              clearFilters()
+              if (searchInput) skipNextSyncRef.current = true
               setSearchInput('')
+              router.push(pathname)
             }}
             className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
           >

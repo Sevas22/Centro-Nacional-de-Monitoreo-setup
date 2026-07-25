@@ -5,24 +5,49 @@ import { PageHeader, PageTransition } from '@/components/page-shell'
 import { SectionCard } from '@/components/dashboard/section-card'
 import { DepartmentNewsFeed } from '@/components/dashboard/department-news-feed'
 import { DepartmentActivityChart } from '@/components/dashboard/department-activity-chart'
-import { departments, newsArticles, hourlyNews } from '@/data/mock'
+import { prisma } from '@/lib/db'
+import { computeMunicipioActivity, serializeArticle } from '@/lib/news/aggregate'
+import { departmentNames } from '@/lib/spectrum/department-capitals'
 import { activityColor, activityLabel } from '@/lib/style-maps'
+import type { ActivityLevel } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
+
+function levelFor(count: number, max: number): ActivityLevel {
+  const ratio = max > 0 ? count / max : 0
+  if (ratio > 0.75) return 'critical'
+  if (ratio > 0.5) return 'high'
+  if (ratio > 0.25) return 'medium'
+  return 'low'
+}
 
 export default async function DepartmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const department = departments.find((d) => d.id === id)
-  if (!department) notFound()
+  const departmentName = decodeURIComponent(id)
+  if (!departmentNames.includes(departmentName)) notFound()
 
-  const articles = newsArticles.filter((a) => a.department === department.name)
-  const totalNews = departments.reduce((acc, d) => acc + d.newsCount, 0)
-  const share = department.newsCount / totalNews
-  const activityPoints = hourlyNews.map((h) => ({ hour: h.hour, count: Math.max(1, Math.round(h.count * share * 3)) }))
+  const [rows, allDeptCounts] = await Promise.all([
+    prisma.newsArticle.findMany({
+      where: { department: departmentName },
+      orderBy: { publishedAt: 'desc' },
+      take: 200,
+    }),
+    prisma.newsArticle.groupBy({ by: ['department'], _count: true }),
+  ])
 
-  const positive = articles.filter((a) => a.sentiment === 'positive').length
-  const negative = articles.filter((a) => a.sentiment === 'negative').length
-  const critical = articles.filter((a) => a.importance === 'critical').length
-  const municipalities = department.municipalities ?? []
-  const maxMuniCount = Math.max(1, ...municipalities.map((m) => m.newsCount))
+  const maxDeptCount = Math.max(1, ...allDeptCounts.map((d) => d._count))
+  const newsCount = rows.length
+  const level = levelFor(newsCount, maxDeptCount)
+
+  const articles = rows.map(serializeArticle)
+  const municipalities = computeMunicipioActivity(rows).filter((m) => m.departmentName === departmentName)
+
+  const hourCounts = new Array(24).fill(0)
+  for (const a of rows) hourCounts[new Date(a.publishedAt).getHours()]++
+  const activityPoints = hourCounts.map((count, hour) => ({ hour: `${String(hour).padStart(2, '0')}:00`, count }))
+
+  const positive = rows.filter((a) => a.sentiment === 'positive').length
+  const critical = rows.filter((a) => a.importance === 'critical').length
 
   return (
     <PageTransition>
@@ -31,19 +56,19 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
           Departamentos
         </Link>
         <ChevronRight className="size-3.5" />
-        <span className="text-foreground">{department.name}</span>
+        <span className="text-foreground">{departmentName}</span>
       </div>
 
       <PageHeader
-        title={department.name}
-        subtitle={`${department.newsCount.toLocaleString('es-CO')} noticias registradas · ${municipalities.length} municipios monitoreados`}
+        title={departmentName}
+        subtitle={`${newsCount.toLocaleString('es-CO')} noticias reales recientes · ${municipalities.length} municipios detectados`}
         badge={
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold"
-            style={{ backgroundColor: `${activityColor[department.level]}22`, color: activityColor[department.level] }}
+            style={{ backgroundColor: `${activityColor[level]}22`, color: activityColor[level] }}
           >
-            <span className="size-1.5 rounded-full" style={{ backgroundColor: activityColor[department.level] }} />
-            Actividad {activityLabel[department.level]}
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: activityColor[level] }} />
+            Actividad {activityLabel[level]}
           </span>
         }
       />
@@ -52,14 +77,14 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Newspaper className="size-3.5" />
-            <span className="text-[11px] uppercase tracking-wide">Noticias hoy</span>
+            <span className="text-[11px] uppercase tracking-wide">Noticias recientes</span>
           </div>
-          <p className="mt-1.5 font-mono text-2xl font-bold text-foreground">{department.newsCount.toLocaleString('es-CO')}</p>
+          <p className="mt-1.5 font-mono text-2xl font-bold text-foreground">{newsCount.toLocaleString('es-CO')}</p>
         </div>
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="size-3.5" />
-            <span className="text-[11px] uppercase tracking-wide">Municipios activos</span>
+            <span className="text-[11px] uppercase tracking-wide">Municipios detectados</span>
           </div>
           <p className="mt-1.5 font-mono text-2xl font-bold text-foreground">{municipalities.length}</p>
         </div>
@@ -68,7 +93,9 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
             <TrendingUp className="size-3.5" />
             <span className="text-[11px] uppercase tracking-wide">Sentimiento positivo</span>
           </div>
-          <p className="mt-1.5 font-mono text-2xl font-bold text-success">{articles.length ? Math.round((positive / articles.length) * 100) : 0}%</p>
+          <p className="mt-1.5 font-mono text-2xl font-bold text-success">
+            {newsCount ? Math.round((positive / newsCount) * 100) : 0}%
+          </p>
         </div>
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -80,35 +107,31 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <SectionCard title="Municipios monitoreados" icon={<Building2 className="size-4 text-[var(--accent-purple)]" />}>
+        <SectionCard title="Municipios detectados" icon={<Building2 className="size-4 text-[var(--accent-purple)]" />}>
           <div className="flex flex-col gap-2.5">
             {municipalities.map((m) => (
-              <div key={m.id} className="rounded-lg border border-border bg-background/40 p-2.5">
+              <div key={m.name} className="rounded-lg border border-border bg-background/40 p-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium text-foreground">{m.name}</p>
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                    style={{ backgroundColor: `${activityColor[m.activityLevel]}22`, color: activityColor[m.activityLevel] }}
+                    style={{ backgroundColor: `${activityColor[m.level]}22`, color: activityColor[m.level] }}
                   >
-                    {activityLabel[m.activityLevel]}
+                    {m.newsCount} {m.newsCount === 1 ? 'noticia' : 'noticias'}
                   </span>
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-background">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${(m.newsCount / maxMuniCount) * 100}%`, backgroundColor: activityColor[m.activityLevel] }}
-                  />
                 </div>
               </div>
             ))}
             {municipalities.length === 0 && (
-              <p className="py-4 text-center text-sm text-muted-foreground">Sin municipios registrados para este departamento.</p>
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No se detectó ningún municipio específico en las noticias recientes de este departamento.
+              </p>
             )}
           </div>
         </SectionCard>
 
         <SectionCard
-          title="Actividad histórica (24h estimadas)"
+          title="Actividad por hora (artículos recientes)"
           icon={<Clock className="size-4 text-[var(--accent-blue)]" />}
           className="lg:col-span-2"
         >
@@ -117,7 +140,7 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
       </div>
 
       <div className="mt-6">
-        <SectionCard title={`Noticias de ${department.name}`} icon={<Newspaper className="size-4 text-[var(--accent-cyan)]" />}>
+        <SectionCard title={`Noticias de ${departmentName}`} icon={<Newspaper className="size-4 text-[var(--accent-cyan)]" />}>
           <DepartmentNewsFeed articles={articles} />
         </SectionCard>
       </div>
