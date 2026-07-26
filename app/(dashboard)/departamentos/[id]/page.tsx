@@ -5,9 +5,12 @@ import { PageHeader, PageTransition } from '@/components/page-shell'
 import { SectionCard } from '@/components/dashboard/section-card'
 import { DepartmentNewsFeed } from '@/components/dashboard/department-news-feed'
 import { DepartmentActivityChart } from '@/components/dashboard/department-activity-chart'
+import { DepartmentMunicipiosList, type MunicipioRow } from '@/components/dashboard/department-municipios-list'
 import { prisma } from '@/lib/db'
-import { computeMunicipioActivity, serializeArticle } from '@/lib/news/aggregate'
+import { serializeArticle } from '@/lib/news/aggregate'
 import { departmentNames } from '@/lib/spectrum/department-capitals'
+import { departmentDivipola } from '@/lib/spectrum/department-divipola'
+import { municipioCoordinates } from '@/lib/spectrum/municipio-coordinates'
 import { activityColor, activityLabel } from '@/lib/style-maps'
 import type { ActivityLevel } from '@/lib/types'
 
@@ -40,7 +43,25 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
   const level = levelFor(newsCount, maxDeptCount)
 
   const articles = rows.map(serializeArticle)
-  const municipalities = computeMunicipioActivity(rows).filter((m) => m.departmentName === departmentName)
+
+  // Todos los municipios REALES del departamento (dato oficial DANE), no solo los que ya
+  // tienen noticias — así el usuario puede ver de una vez cuáles siguen "Sin datos" y decidir
+  // dónde meter fuentes específicas más adelante. La cuenta de "detectados" (para el KPI y el
+  // subtítulo) sigue siendo honesta: solo cuenta los que de verdad tienen artículos.
+  const deptCode = departmentDivipola[departmentName]
+  const countsByMuni = new Map<string, number>()
+  for (const a of rows) {
+    if (!a.municipality) continue
+    countsByMuni.set(a.municipality, (countsByMuni.get(a.municipality) ?? 0) + 1)
+  }
+  const maxMuniCount = Math.max(1, ...countsByMuni.values())
+  const municipalities: MunicipioRow[] = (deptCode ? municipioCoordinates.filter((m) => m.deptCode === deptCode) : [])
+    .map((m) => {
+      const muniNewsCount = countsByMuni.get(m.name) ?? 0
+      return { name: m.name, newsCount: muniNewsCount, level: levelFor(muniNewsCount, maxMuniCount) }
+    })
+    .sort((a, b) => b.newsCount - a.newsCount || a.name.localeCompare(b.name))
+  const detectedCount = municipalities.filter((m) => m.newsCount > 0).length
 
   const hourCounts = new Array(24).fill(0)
   for (const a of rows) hourCounts[new Date(a.publishedAt).getHours()]++
@@ -61,7 +82,7 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
 
       <PageHeader
         title={departmentName}
-        subtitle={`${newsCount.toLocaleString('es-CO')} noticias reales recientes · ${municipalities.length} municipios detectados`}
+        subtitle={`${newsCount.toLocaleString('es-CO')} noticias reales recientes · ${detectedCount} de ${municipalities.length} municipios con noticias`}
         badge={
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold"
@@ -84,9 +105,12 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="size-3.5" />
-            <span className="text-[11px] uppercase tracking-wide">Municipios detectados</span>
+            <span className="text-[11px] uppercase tracking-wide">Municipios con noticias</span>
           </div>
-          <p className="mt-1.5 font-mono text-2xl font-bold text-foreground">{municipalities.length}</p>
+          <p className="mt-1.5 font-mono text-2xl font-bold text-foreground">
+            {detectedCount}
+            <span className="text-base font-normal text-muted-foreground">/{municipalities.length}</span>
+          </p>
         </div>
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -107,27 +131,14 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <SectionCard title="Municipios detectados" icon={<Building2 className="size-4 text-[var(--accent-purple)]" />}>
-          <div className="flex flex-col gap-2.5">
-            {municipalities.map((m) => (
-              <div key={m.name} className="rounded-lg border border-border bg-background/40 p-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground">{m.name}</p>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                    style={{ backgroundColor: `${activityColor[m.level]}22`, color: activityColor[m.level] }}
-                  >
-                    {m.newsCount} {m.newsCount === 1 ? 'noticia' : 'noticias'}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {municipalities.length === 0 && (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No se detectó ningún municipio específico en las noticias recientes de este departamento.
-              </p>
-            )}
-          </div>
+        <SectionCard title={`Municipios (${municipalities.length})`} icon={<Building2 className="size-4 text-[var(--accent-purple)]" />}>
+          {municipalities.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              No hay municipios registrados para este departamento en los datos geográficos.
+            </p>
+          ) : (
+            <DepartmentMunicipiosList municipios={municipalities} />
+          )}
         </SectionCard>
 
         <SectionCard
