@@ -1,6 +1,8 @@
 import Parser from 'rss-parser'
 import { prisma } from '@/lib/db'
 import { newsSources } from './sources'
+import { scrapedSources } from './scrape-sources'
+import { scrapeSource } from './scrape'
 import { detectDepartment, detectMunicipality } from './departments'
 import { classifyArticles, type ArticleClassification } from '@/lib/ai/classify-article'
 
@@ -44,42 +46,72 @@ export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
   // Con ~20 fuentes, traerlas una por una agotaría el límite de duración de la función serverless
   // (10s por defecto en Vercel Hobby) mucho antes de terminar. En paralelo, el tiempo total es el
   // de la fuente más lenta, no la suma de todas — y una fuente caída no bloquea a las demás.
-  const perSourceResults = await Promise.all(
-    newsSources
-      .filter((src) => src.enabled)
-      .map(async (src) => {
-        try {
-          const feed = await parser.parseURL(src.feedUrl)
-          const items: RawItem[] = []
-          for (const item of feed.items) {
-            if (!item.link || !item.title) continue
-            items.push({
-              sourceUrl: item.link,
-              title: item.title,
-              summary: (item.contentSnippet ?? item.summary ?? '').slice(0, 800),
-              publishedAt: item.isoDate ? new Date(item.isoDate) : new Date(),
-              source: src.name,
-              category: src.category,
-              tags: (item.categories ?? [])
-                .map(normalizeTag)
-                .filter((t): t is string => t !== null)
-                .slice(0, 8),
-            })
-          }
-          return { result: { source: `${src.name} (${src.category})`, fetched: items.length, new: 0 }, items }
-        } catch (err) {
-          return {
-            result: {
-              source: `${src.name} (${src.category})`,
-              fetched: 0,
-              new: 0,
-              error: err instanceof Error ? err.message : 'Error desconocido',
-            },
-            items: [] as RawItem[],
-          }
+  const rssResults = newsSources
+    .filter((src) => src.enabled)
+    .map(async (src) => {
+      try {
+        const feed = await parser.parseURL(src.feedUrl)
+        const items: RawItem[] = []
+        for (const item of feed.items) {
+          if (!item.link || !item.title) continue
+          items.push({
+            sourceUrl: item.link,
+            title: item.title,
+            summary: (item.contentSnippet ?? item.summary ?? '').slice(0, 800),
+            publishedAt: item.isoDate ? new Date(item.isoDate) : new Date(),
+            source: src.name,
+            category: src.category,
+            tags: (item.categories ?? [])
+              .map(normalizeTag)
+              .filter((t): t is string => t !== null)
+              .slice(0, 8),
+          })
         }
-      }),
-  )
+        return { result: { source: `${src.name} (${src.category})`, fetched: items.length, new: 0 }, items }
+      } catch (err) {
+        return {
+          result: {
+            source: `${src.name} (${src.category})`,
+            fetched: 0,
+            new: 0,
+            error: err instanceof Error ? err.message : 'Error desconocido',
+          },
+          items: [] as RawItem[],
+        }
+      }
+    })
+
+  // Fuentes sin RSS (ver lib/news/scrape-sources.ts): mismo patrón try/catch por fuente, para
+  // que un sitio caído o que cambió de diseño no tumbe la ingesta completa.
+  const scrapedResults = scrapedSources
+    .filter((src) => src.enabled)
+    .map(async (src) => {
+      try {
+        const scraped = await scrapeSource(src)
+        const items: RawItem[] = scraped.map((s) => ({
+          sourceUrl: s.link,
+          title: s.title,
+          summary: '',
+          publishedAt: new Date(),
+          source: src.name,
+          category: src.category,
+          tags: [],
+        }))
+        return { result: { source: `${src.name} (${src.category})`, fetched: items.length, new: 0 }, items }
+      } catch (err) {
+        return {
+          result: {
+            source: `${src.name} (${src.category})`,
+            fetched: 0,
+            new: 0,
+            error: err instanceof Error ? err.message : 'Error desconocido',
+          },
+          items: [] as RawItem[],
+        }
+      }
+    })
+
+  const perSourceResults = await Promise.all([...rssResults, ...scrapedResults])
 
   const results = perSourceResults.map((r) => r.result)
   const rawItems = perSourceResults.flatMap((r) => r.items)
@@ -127,7 +159,10 @@ export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
       category: item.category,
       importance: c?.importance ?? ('normal' as const),
       sentiment: c?.sentiment ?? ('neutral' as const),
-      aiSummary: c?.aiSummary ?? item.summary,
+      // Las fuentes por scraping no traen resumen (la página listado solo da título + link) —
+      // usar el título como respaldo es honesto (no inventa contenido) y evita dejar el bloque
+      // "Resumen IA" vacío en la tarjeta.
+      aiSummary: c?.aiSummary ?? (item.summary || item.title),
       tags: item.tags,
     }
   })
