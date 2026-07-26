@@ -157,7 +157,7 @@ export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
       )
       for (const c of batchClassifications) classifications.set(c.id, c)
     } catch {
-      // Si la clasificación falla (p. ej. sin ANTHROPIC_API_KEY), los artículos se guardan igual
+      // Si la clasificación falla (p. ej. sin GROQ_API_KEY), los artículos se guardan igual
       // con un fallback honesto abajo — nunca se descarta una noticia real por esto.
     }
   }
