@@ -44,4 +44,17 @@ export const newsSources: NewsSourceFeed[] = [
   { name: 'El Nuevo Día', feedUrl: 'https://www.elnuevodia.com.co/rss.xml', category: 'Regional', enabled: true },
   { name: "Q'hubo", feedUrl: 'https://www.qhubo.com/feed/', category: 'Nacional', enabled: true },
   { name: 'Diario del Sur', feedUrl: 'https://www.diariodelsur.com.co/feed/', category: 'Regional', enabled: true },
+  // Del inventario de fuentes de Cauca que me pasaste (Inventario_URL_Cauca_SIFEM.xlsx) — de las
+  // 27, estas 5 son las únicas con RSS real y activo (verificado con curl, contenido fechado a
+  // hoy). Las demás no tienen feed (portales HTML puros, radio/TV sin RSS) y quedan pendientes.
+  { name: 'Diario del Cauca', feedUrl: 'https://diariodelcauca.com.co/feed/', category: 'Regional', enabled: true },
+  { name: 'El Liberal Popayán', feedUrl: 'https://elliberalpopayan.com/feed/', category: 'Regional', enabled: true },
+  {
+    name: 'Periódico La Campana',
+    feedUrl: 'https://www.periodicolacampana.com/feed/',
+    category: 'Regional',
+    enabled: true,
+  },
+  { name: 'Periódico Virtual', feedUrl: 'https://periodicovirtual.com/rss/', category: 'Regional', enabled: true },
+  { name: 'Fiscalía General', feedUrl: 'https://www.fiscalia.gov.co/feed/', category: 'Seguridad', enabled: true },
 ]
