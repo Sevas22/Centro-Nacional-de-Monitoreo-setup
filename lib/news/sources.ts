@@ -40,4 +40,8 @@ export const newsSources: NewsSourceFeed[] = [
   { name: 'Las2orillas', feedUrl: 'https://www.las2orillas.co/feed/', category: 'Nacional', enabled: true },
   { name: 'Valora Analitik', feedUrl: 'https://www.valoraanalitik.com/feed/', category: 'Economía', enabled: true },
   { name: 'La República', feedUrl: 'https://www.larepublica.co/rss', category: 'Economía', enabled: true },
+  { name: 'El Diario', feedUrl: 'https://www.eldiario.com.co/feed/', category: 'Nacional', enabled: true },
+  { name: 'El Nuevo Día', feedUrl: 'https://www.elnuevodia.com.co/rss.xml', category: 'Regional', enabled: true },
+  { name: "Q'hubo", feedUrl: 'https://www.qhubo.com/feed/', category: 'Nacional', enabled: true },
+  { name: 'Diario del Sur', feedUrl: 'https://www.diariodelsur.com.co/feed/', category: 'Regional', enabled: true },
 ]
