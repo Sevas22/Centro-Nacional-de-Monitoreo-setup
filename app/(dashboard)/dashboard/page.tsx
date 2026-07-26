@@ -31,8 +31,9 @@ export default async function DashboardPage({
   const where = buildNewsWhere(filters)
   const hasFilters = Object.keys(filters).some((k) => filters[k as keyof NewsFilterParams])
 
-  const [rows, latestBriefingRow] = await Promise.all([
+  const [rows, totalCount, latestBriefingRow] = await Promise.all([
     prisma.newsArticle.findMany({ where, orderBy: { publishedAt: 'desc' }, take: 300 }),
+    prisma.newsArticle.count({ where }),
     prisma.briefing.findFirst({ where: { kind: 'diario' }, orderBy: { generatedAt: 'desc' } }),
   ])
 
@@ -44,12 +45,16 @@ export default async function DashboardPage({
     : null
 
   const rangeLabel = dateRangeOptions.find((o) => o.value === filters.range)?.label ?? 'Más recientes'
+  // Solo se cargan las 300 más recientes para no sobrecargar el feed/KPIs, pero el conteo mostrado
+  // debe ser el total real que cumple el filtro — si no, se queda pegado en "300" para siempre
+  // apenas la base crece más que eso, aunque el filtro de verdad devuelva mucho más.
+  const countLabel = totalCount > articles.length ? `${articles.length} de ${totalCount}` : `${articles.length}`
 
   return (
     <PageTransition>
       <PageHeader
         title="Panorama Nacional en Tiempo Real"
-        subtitle={`Monitoreo de noticias reales de El Tiempo, Semana e Infobae · ${rangeLabel.toLowerCase()}${hasFilters ? ' (filtrado)' : ''} · ${articles.length} artículos`}
+        subtitle={`Monitoreo de noticias reales de El Tiempo, Semana e Infobae · ${rangeLabel.toLowerCase()}${hasFilters ? ' (filtrado)' : ''} · ${countLabel} artículos`}
         badge={
           <div className="flex items-center gap-4">
             <AutoRefresh intervalMs={180000} />
