@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Building2,
-  MapPin,
   TrendingUp,
   FileText,
   Bell,
@@ -35,7 +34,6 @@ function buildGroups(trendingCount: number, alertsCount: number): { title: strin
       items: [
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { label: 'Departamentos', href: '/departamentos', icon: Building2 },
-        { label: 'Municipios', href: '/municipios', icon: MapPin },
         {
           label: 'Trending Topics',
           href: '/trending',
