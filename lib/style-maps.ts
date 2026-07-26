@@ -1,4 +1,4 @@
-import type { ActivityLevel, Importance, Sentiment } from '@/lib/types'
+import type { ActivityLevel, Importance, RiskLevel } from '@/lib/types'
 
 export const accentMap: Record<string, { text: string; bg: string; border: string; hex: string }> = {
   blue: { text: 'text-primary', bg: 'bg-primary/10', border: 'bg-primary', hex: '#3b82f6' },
@@ -21,12 +21,6 @@ export const importanceLabel: Record<Importance, string> = {
   normal: 'Normal',
 }
 
-export const sentimentStyle: Record<Sentiment, { label: string; className: string }> = {
-  positive: { label: 'Positivo', className: 'bg-success/15 text-success' },
-  negative: { label: 'Negativo', className: 'bg-destructive/15 text-destructive' },
-  neutral: { label: 'Neutral', className: 'bg-muted-foreground/15 text-muted-foreground' },
-}
-
 export const activityColor: Record<ActivityLevel, string> = {
   low: '#134e2f',
   medium: '#a16207',
@@ -39,4 +33,18 @@ export const activityLabel: Record<ActivityLevel, string> = {
   medium: 'Media',
   high: 'Alta',
   critical: 'Crítica',
+}
+
+// Mismos 4 niveles/colores que activityColor (low/medium/high/critical) — clasificación real de
+// riesgo por IA (lib/ai/classify-article.ts) a partir del contenido de cada noticia, reemplaza el
+// antiguo "sentimiento" positivo/negativo/neutral que no era útil para monitoreo de seguridad.
+export const riskLevelLabel: Record<RiskLevel, string> = {
+  low: 'Bajo',
+  medium: 'Medio',
+  high: 'Alto',
+  critical: 'Crítico',
+}
+
+export function riskLevelBadgeStyle(level: RiskLevel): { backgroundColor: string; color: string } {
+  return { backgroundColor: `${activityColor[level]}22`, color: activityColor[level] }
 }

@@ -67,7 +67,7 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
   for (const a of rows) hourCounts[new Date(a.publishedAt).getHours()]++
   const activityPoints = hourCounts.map((count, hour) => ({ hour: `${String(hour).padStart(2, '0')}:00`, count }))
 
-  const positive = rows.filter((a) => a.sentiment === 'positive').length
+  const highRisk = rows.filter((a) => a.riskLevel === 'high' || a.riskLevel === 'critical').length
   const critical = rows.filter((a) => a.importance === 'critical').length
 
   return (
@@ -115,10 +115,10 @@ export default async function DepartmentDetailPage({ params }: { params: Promise
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <TrendingUp className="size-3.5" />
-            <span className="text-[11px] uppercase tracking-wide">Sentimiento positivo</span>
+            <span className="text-[11px] uppercase tracking-wide">Riesgo alto o crítico</span>
           </div>
-          <p className="mt-1.5 font-mono text-2xl font-bold text-success">
-            {newsCount ? Math.round((positive / newsCount) * 100) : 0}%
+          <p className="mt-1.5 font-mono text-2xl font-bold text-warning">
+            {newsCount ? Math.round((highRisk / newsCount) * 100) : 0}%
           </p>
         </div>
         <div className="glass rounded-xl p-4">

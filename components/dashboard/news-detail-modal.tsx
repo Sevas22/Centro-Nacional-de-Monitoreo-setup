@@ -1,11 +1,11 @@
 'use client'
 
 import { Sparkles, MapPin, Clock, Radio, Share2, Bookmark, ExternalLink } from 'lucide-react'
-import { cn, formatTimeAgo } from '@/lib/utils'
+import { formatTimeAgo } from '@/lib/utils'
 import { Modal } from '@/components/modal'
 import { useToast } from '@/components/toast-provider'
 import type { NewsArticle } from '@/lib/types'
-import { importanceLabel, sentimentStyle } from '@/lib/style-maps'
+import { importanceLabel, riskLevelBadgeStyle, riskLevelLabel } from '@/lib/style-maps'
 
 export function NewsDetailModal({
   article,
@@ -28,8 +28,11 @@ export function NewsDetailModal({
           <div className="flex items-start justify-between gap-4 border-b border-border p-5">
             <div className="flex-1">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className={cn('rounded-md px-2 py-0.5 text-[11px] font-semibold', sentimentStyle[article.sentiment].className)}>
-                  {sentimentStyle[article.sentiment].label}
+                <span
+                  className="rounded-md px-2 py-0.5 text-[11px] font-semibold"
+                  style={riskLevelBadgeStyle(article.riskLevel)}
+                >
+                  Riesgo {riskLevelLabel[article.riskLevel]}
                 </span>
                 <span className="rounded-md bg-accent/60 px-2 py-0.5 text-[11px] font-medium text-foreground/70">
                   {article.category}

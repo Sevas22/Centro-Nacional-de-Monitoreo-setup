@@ -13,10 +13,11 @@ enum Importance {
   normal
 }
 
-enum Sentiment {
-  positive
-  negative
-  neutral
+enum RiskLevel {
+  low
+  medium
+  high
+  critical
 }
 
 model User {
@@ -30,7 +31,7 @@ model User {
 
 // Artículos ingeridos por RSS de medios colombianos reales (El Tiempo, Semana, Infobae —
 // ver lib/news/sources.ts). department se detecta por keyword-match (lib/news/departments.ts,
-// 'Nacional' si no hay coincidencia); sentiment/importance/aiSummary los asigna Claude Haiku
+// 'Nacional' si no hay coincidencia); riskLevel/importance/aiSummary los asigna Claude Haiku
 // a partir del título+resumen reales (lib/ai/classify-article.ts) — nunca se inventan hechos.
 // municipality queda sin poblar (no hay detección a ese nivel todavía) en vez de fabricarlo.
 model NewsArticle {
@@ -45,7 +46,7 @@ model NewsArticle {
   publishedAt  DateTime
   category     String
   importance   Importance
-  sentiment    Sentiment
+  riskLevel    RiskLevel
   aiSummary    String
   tags         String[]
   createdAt    DateTime   @default(now())

@@ -1,7 +1,7 @@
 import { BrainCircuit, Sparkles, TrendingUp } from 'lucide-react'
 import { PageHeader, PageTransition } from '@/components/page-shell'
 import { SectionCard } from '@/components/dashboard/section-card'
-import { SentimentDonut } from '@/components/dashboard/charts'
+import { RiskLevelDonut } from '@/components/dashboard/charts'
 import { WordCloud } from '@/components/dashboard/word-cloud'
 import { AIIntelligencePanel } from '@/components/dashboard/ai-intelligence-panel'
 import { prisma } from '@/lib/db'
@@ -38,8 +38,8 @@ export default async function AnalisisIAPage() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SectionCard title="Sentimiento agregado" icon={<TrendingUp className="size-4 text-[var(--accent-green)]" />}>
-          <SentimentDonut data={data.sentimentData} />
+        <SectionCard title="Nivel de riesgo agregado" icon={<TrendingUp className="size-4 text-[var(--accent-green)]" />}>
+          <RiskLevelDonut data={data.riskLevelData} />
         </SectionCard>
         <SectionCard title="Temas detectados" icon={<Sparkles className="size-4 text-[var(--accent-cyan)]" />}>
           <WordCloud words={data.wordCloud} />

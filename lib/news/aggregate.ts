@@ -18,9 +18,8 @@ export interface DashboardKPIs {
   breakingNews: number
   activeDepartments: number
   trendingTopics: number
-  positivePercent: number
-  negativePercent: number
-  neutralPercent: number
+  riskHighPercent: number
+  riskCriticalPercent: number
   criticalAlerts: number
   totalSources: number
   avgArticlesPerHour: number
@@ -36,7 +35,7 @@ export interface DashboardData {
   kpis: DashboardKPIs
   hourlyNews: { hour: string; count: number }[]
   categoryData: { category: string; count: number }[]
-  sentimentData: { name: string; value: number; color: string }[]
+  riskLevelData: { name: string; value: number; color: string }[]
   topDepartmentsBar: { name: string; count: number; level: ActivityLevel }[]
   wordCloud: { text: string; size: number; color: 'blue' | 'green' | 'purple' }[]
   heatmapDepts: string[]
@@ -125,7 +124,7 @@ export function aggregateDashboard(articles: NewsArticle[]): DashboardData {
 
   const deptCounts = new Map<string, number>()
   const categoryCounts = new Map<string, number>()
-  const sentimentCounts = { positive: 0, negative: 0, neutral: 0 }
+  const riskCounts = { low: 0, medium: 0, high: 0, critical: 0 }
   const tagCounts = new Map<string, number>()
   const hourCounts = new Array(24).fill(0)
   const sourceNames = new Set<string>()
@@ -134,7 +133,7 @@ export function aggregateDashboard(articles: NewsArticle[]): DashboardData {
   for (const a of articles) {
     if (a.department !== 'Nacional') deptCounts.set(a.department, (deptCounts.get(a.department) ?? 0) + 1)
     categoryCounts.set(a.category, (categoryCounts.get(a.category) ?? 0) + 1)
-    sentimentCounts[a.sentiment]++
+    riskCounts[a.riskLevel]++
     for (const tag of a.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
     hourCounts[new Date(a.publishedAt).getHours()]++
     sourceNames.add(a.source)
@@ -163,19 +162,19 @@ export function aggregateDashboard(articles: NewsArticle[]): DashboardData {
       breakingNews,
       activeDepartments: deptCounts.size,
       trendingTopics: tagCounts.size,
-      positivePercent: total > 0 ? Math.round((sentimentCounts.positive / total) * 100) : 0,
-      negativePercent: total > 0 ? Math.round((sentimentCounts.negative / total) * 100) : 0,
-      neutralPercent: total > 0 ? Math.round((sentimentCounts.neutral / total) * 100) : 0,
+      riskHighPercent: total > 0 ? Math.round((riskCounts.high / total) * 100) : 0,
+      riskCriticalPercent: total > 0 ? Math.round((riskCounts.critical / total) * 100) : 0,
       criticalAlerts: breakingNews,
       totalSources: sourceNames.size,
       avgArticlesPerHour: Math.round((total / 24) * 10) / 10,
     },
     hourlyNews: hourCounts.map((count, hour) => ({ hour: `${String(hour).padStart(2, '0')}:00`, count })),
     categoryData: [...categoryCounts.entries()].map(([category, count]) => ({ category, count })),
-    sentimentData: [
-      { name: 'Positivo', value: sentimentCounts.positive, color: '#10b981' },
-      { name: 'Negativo', value: sentimentCounts.negative, color: '#ef4444' },
-      { name: 'Neutral', value: sentimentCounts.neutral, color: '#64748b' },
+    riskLevelData: [
+      { name: 'Bajo', value: riskCounts.low, color: '#134e2f' },
+      { name: 'Medio', value: riskCounts.medium, color: '#a16207' },
+      { name: 'Alto', value: riskCounts.high, color: '#ea580c' },
+      { name: 'Crítico', value: riskCounts.critical, color: '#dc2626' },
     ],
     topDepartmentsBar: topDepartments.map(([name, count]) => ({ name, count, level: levelFor(count, maxDeptCount) })),
     wordCloud: topTags.map(([text, count], i) => ({

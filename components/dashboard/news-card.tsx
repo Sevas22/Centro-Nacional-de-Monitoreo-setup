@@ -3,7 +3,7 @@
 import { Sparkles, MapPin, Clock, Radio } from 'lucide-react'
 import { cn, formatTimeAgo } from '@/lib/utils'
 import type { NewsArticle } from '@/lib/types'
-import { importanceBorder, sentimentStyle } from '@/lib/style-maps'
+import { importanceBorder, riskLevelBadgeStyle, riskLevelLabel } from '@/lib/style-maps'
 
 interface NewsCardProps {
   article: NewsArticle
@@ -12,7 +12,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article, onClick, isNew }: NewsCardProps) {
-  const sent = sentimentStyle[article.sentiment]
+  const risk = article.riskLevel
 
   return (
     <button
@@ -25,8 +25,11 @@ export function NewsCard({ article, onClick, isNew }: NewsCardProps) {
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-pretty text-sm font-semibold leading-snug text-foreground">{article.title}</h3>
-        <span className={cn('shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold', sent.className)}>
-          {sent.label}
+        <span
+          className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
+          style={riskLevelBadgeStyle(risk)}
+        >
+          {riskLevelLabel[risk]}
         </span>
       </div>
 

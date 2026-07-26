@@ -9,8 +9,8 @@ export function KpiGrid({ kpis }: { kpis: DashboardKPIs }) {
     { icon: 'AlertTriangle', value: kpis.breakingNews, label: 'Noticias críticas', accent: 'red' },
     { icon: 'MapPin', value: kpis.activeDepartments, label: 'Departamentos con actividad', accent: 'orange' },
     { icon: 'Flame', value: kpis.trendingTopics, label: 'Temas distintos detectados', accent: 'purple' },
-    { icon: 'ThumbsUp', value: `${kpis.positivePercent}%`, label: 'Sentimiento positivo', accent: 'green' },
-    { icon: 'ThumbsDown', value: `${kpis.negativePercent}%`, label: 'Sentimiento negativo', accent: 'red' },
+    { icon: 'ShieldAlert', value: `${kpis.riskHighPercent}%`, label: 'Riesgo alto', accent: 'orange' },
+    { icon: 'Siren', value: `${kpis.riskCriticalPercent}%`, label: 'Riesgo crítico', accent: 'red' },
     { icon: 'Radio', value: kpis.totalSources, label: 'Fuentes activas', accent: 'cyan' },
     { icon: 'Activity', value: kpis.avgArticlesPerHour, label: 'Promedio artículos/hora', accent: 'blue' },
   ]

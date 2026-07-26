@@ -13,7 +13,7 @@ import { dateRangeOptions } from '@/lib/news/query'
 const sourceNames = [...new Set(newsSources.map((s) => s.name))]
 const categoryNames = [...new Set(newsSources.map((s) => s.category))]
 
-// Los filtros viven en la URL (?range=&source=&department=&category=&sentiment=&q=), no en un
+// Los filtros viven en la URL (?range=&source=&department=&category=&risk=&q=), no en un
 // Context de React — así la página que corresponda (hoy: /dashboard) puede leerlos en el
 // servidor y filtrar de verdad con Prisma, en vez de solo esconder tarjetas ya cargadas.
 const filterFields: { param: string; label: string; options: { value: string; label: string }[] }[] = [
@@ -38,13 +38,14 @@ const filterFields: { param: string; label: string; options: { value: string; la
     options: [{ value: 'Todas', label: 'Todas' }, ...categoryNames.map((c) => ({ value: c, label: c }))],
   },
   {
-    param: 'sentiment',
-    label: 'Sentimiento',
+    param: 'risk',
+    label: 'Riesgo',
     options: [
       { value: 'Todos', label: 'Todos' },
-      { value: 'Positivo', label: 'Positivo' },
-      { value: 'Negativo', label: 'Negativo' },
-      { value: 'Neutral', label: 'Neutral' },
+      { value: 'Bajo', label: 'Bajo' },
+      { value: 'Medio', label: 'Medio' },
+      { value: 'Alto', label: 'Alto' },
+      { value: 'Crítico', label: 'Crítico' },
     ],
   },
 ]

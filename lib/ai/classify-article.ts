@@ -8,7 +8,7 @@ export interface ArticleToClassify {
 
 export interface ArticleClassification {
   id: string
-  sentiment: 'positive' | 'negative' | 'neutral'
+  riskLevel: 'low' | 'medium' | 'high' | 'critical'
   importance: 'critical' | 'high' | 'normal'
   aiSummary: string
 }
@@ -31,7 +31,7 @@ export async function classifyArticles(articles: ArticleToClassify[]): Promise<A
     .join('\n\n')
 
   const prompt = `Clasifica cada una de estas ${articles.length} noticias reales (ya publicadas por medios colombianos). Para cada una, responde con:
-- "sentiment": "positive", "negative" o "neutral" — el tono de lo que reporta la noticia.
+- "riskLevel": "low", "medium", "high" o "critical" — nivel de riesgo para seguridad/orden público que representa lo que reporta la noticia (violencia, delincuencia, conflicto armado, desastres, amenazas = high/critical; tensión política, corrupción, protestas = medium; noticias de deportes, cultura, economía cotidiana, entretenimiento sin riesgo = low). Evalúa el contenido real, no el tono emocional.
 - "importance": "critical", "high" o "normal" — qué tan relevante es para monitoreo de seguridad/orden público/coyuntura nacional (critical solo para eventos graves de seguridad, desastres o crisis; normal para la mayoría).
 - "aiSummary": una frase (máx 20 palabras) que resuma la noticia, basada solo en el título y resumen dados — no agregues datos que no estén ahí.
 
@@ -39,7 +39,7 @@ NOTICIAS:
 ${inputList}
 
 Responde ÚNICAMENTE con un array JSON válido, sin texto adicional, con esta forma exacta:
-[{"id": "...", "sentiment": "...", "importance": "...", "aiSummary": "..."}, ...]`
+[{"id": "...", "riskLevel": "...", "importance": "...", "aiSummary": "..."}, ...]`
 
   const message = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -59,7 +59,7 @@ Responde ÚNICAMENTE con un array JSON válido, sin texto adicional, con esta fo
     return parsed.filter(
       (c) =>
         typeof c.id === 'string' &&
-        ['positive', 'negative', 'neutral'].includes(c.sentiment) &&
+        ['low', 'medium', 'high', 'critical'].includes(c.riskLevel) &&
         ['critical', 'high', 'normal'].includes(c.importance) &&
         typeof c.aiSummary === 'string',
     )

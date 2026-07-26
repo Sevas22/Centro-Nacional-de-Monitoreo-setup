@@ -8,7 +8,7 @@ import { departmentCoordinates } from '@/lib/spectrum/department-coordinates'
 import { fetchWeatherBatch, type CurrentWeather } from '@/lib/spectrum/weather'
 import { computeNationalSnapshot } from '@/lib/spectrum/national'
 import { formatTimeAgo } from '@/lib/utils'
-import { sentimentStyle } from '@/lib/style-maps'
+import { riskLevelBadgeStyle, riskLevelLabel } from '@/lib/style-maps'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,9 +63,10 @@ export default async function AlertasPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-semibold text-foreground">{a.title}</h3>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${sentimentStyle[a.sentiment].className}`}
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+                        style={riskLevelBadgeStyle(a.riskLevel)}
                       >
-                        {sentimentStyle[a.sentiment].label}
+                        {riskLevelLabel[a.riskLevel]}
                       </span>
                     </div>
                     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{a.aiSummary}</p>

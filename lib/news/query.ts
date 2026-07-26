@@ -1,4 +1,4 @@
-import type { Sentiment } from '@/lib/types'
+import type { RiskLevel } from '@/lib/types'
 
 export const dateRangeOptions = [
   { value: 'recientes', label: 'Más recientes' },
@@ -10,10 +10,11 @@ export const dateRangeOptions = [
 
 export type DateRangeValue = (typeof dateRangeOptions)[number]['value']
 
-const sentimentLabelToValue: Record<string, Sentiment> = {
-  Positivo: 'positive',
-  Negativo: 'negative',
-  Neutral: 'neutral',
+const riskLevelLabelToValue: Record<string, RiskLevel> = {
+  Bajo: 'low',
+  Medio: 'medium',
+  Alto: 'high',
+  Crítico: 'critical',
 }
 
 export interface NewsFilterParams {
@@ -21,7 +22,7 @@ export interface NewsFilterParams {
   source?: string
   department?: string
   category?: string
-  sentiment?: string
+  risk?: string
   q?: string
   limit?: string
 }
@@ -82,8 +83,8 @@ export function buildNewsWhere(filters: NewsFilterParams) {
   if (filters.department && filters.department !== 'Todos') where.department = filters.department
   if (filters.category && filters.category !== 'Todas') where.category = filters.category
   if (filters.source && filters.source !== 'Todas') where.source = filters.source
-  if (filters.sentiment && filters.sentiment !== 'Todos' && sentimentLabelToValue[filters.sentiment]) {
-    where.sentiment = sentimentLabelToValue[filters.sentiment]
+  if (filters.risk && filters.risk !== 'Todos' && riskLevelLabelToValue[filters.risk]) {
+    where.riskLevel = riskLevelLabelToValue[filters.risk]
   }
   if (filters.q?.trim()) {
     const q = filters.q.trim()

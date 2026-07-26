@@ -2,7 +2,7 @@ import Parser from 'rss-parser'
 import { prisma } from '@/lib/db'
 import { newsSources } from './sources'
 import { scrapedSources } from './scrape-sources'
-import { scrapeSource } from './scrape'
+import { scrapeSource, fetchPublishedDate } from './scrape'
 import { detectDepartment, detectMunicipality } from './departments'
 import { classifyArticles, type ArticleClassification } from '@/lib/ai/classify-article'
 
@@ -23,6 +23,11 @@ interface RawItem {
   source: string
   category: string
   tags: string[]
+  // true solo para items por scraping (sin RSS) — su publishedAt inicial es la hora de ingesta,
+  // un placeholder honesto pero no la fecha real de publicación. Se reemplaza más abajo por la
+  // fecha real (leída del propio artículo) antes de guardar, y solo para los que resultan
+  // nuevos — no tiene sentido re-visitar artículos que ya están en la base.
+  needsDateFetch?: boolean
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -96,6 +101,7 @@ export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
           source: src.name,
           category: src.category,
           tags: [],
+          needsDateFetch: true,
         }))
         return { result: { source: `${src.name} (${src.category})`, fetched: items.length, new: 0 }, items }
       } catch (err) {
@@ -131,6 +137,18 @@ export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
 
   if (newItems.length === 0) return results
 
+  // Solo para lo nuevo por scraping: entra a cada artículo y busca su fecha real de publicación
+  // (meta tag / <time> / JSON-LD — ver lib/news/scrape.ts). Si el sitio no expone ninguna, se
+  // queda con la hora de ingesta como respaldo honesto, no se inventa una fecha.
+  await Promise.all(
+    newItems
+      .filter((item) => item.needsDateFetch)
+      .map(async (item) => {
+        const real = await fetchPublishedDate(item.sourceUrl)
+        if (real) item.publishedAt = real
+      }),
+  )
+
   const classifications = new Map<string, ArticleClassification>()
   for (const batch of chunk(newItems, 20)) {
     try {
@@ -158,7 +176,7 @@ export async function ingestNewsSources(): Promise<NewsIngestResult[]> {
       publishedAt: item.publishedAt,
       category: item.category,
       importance: c?.importance ?? ('normal' as const),
-      sentiment: c?.sentiment ?? ('neutral' as const),
+      riskLevel: c?.riskLevel ?? ('low' as const),
       // Las fuentes por scraping no traen resumen (la página listado solo da título + link) —
       // usar el título como respaldo es honesto (no inventa contenido) y evita dejar el bloque
       // "Resumen IA" vacío en la tarjeta.

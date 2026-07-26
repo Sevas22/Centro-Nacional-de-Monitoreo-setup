@@ -6,7 +6,7 @@ import { KpiGrid } from '@/components/dashboard/kpi-grid'
 import { NewsFeed } from '@/components/dashboard/news-feed'
 import { ColombiaMapCard } from '@/components/dashboard/colombia-map-card'
 import { SectionCard } from '@/components/dashboard/section-card'
-import { CategoryChart, HourlyChart, SentimentDonut, TopDeptsChart } from '@/components/dashboard/charts'
+import { CategoryChart, HourlyChart, RiskLevelDonut, TopDeptsChart } from '@/components/dashboard/charts'
 import { TopEntities } from '@/components/dashboard/top-entities'
 import { WordCloud } from '@/components/dashboard/word-cloud'
 import { Heatmap } from '@/components/dashboard/heatmap'
@@ -89,8 +89,8 @@ export default async function DashboardPage({
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <SectionCard title="Distribución de sentimiento" icon={<PieChart className="size-4 text-[var(--accent-green)]" />}>
-          <SentimentDonut data={data.sentimentData} />
+        <SectionCard title="Distribución por nivel de riesgo" icon={<PieChart className="size-4 text-[var(--accent-green)]" />}>
+          <RiskLevelDonut data={data.riskLevelData} />
         </SectionCard>
         <SectionCard
           title="Noticias por categoría"

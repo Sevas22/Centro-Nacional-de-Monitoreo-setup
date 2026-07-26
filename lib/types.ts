@@ -1,5 +1,5 @@
 export type Importance = 'critical' | 'high' | 'normal'
-export type Sentiment = 'positive' | 'negative' | 'neutral'
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export type ActivityLevel = 'low' | 'medium' | 'high' | 'critical'
 
 export interface NewsArticle {
@@ -13,7 +13,7 @@ export interface NewsArticle {
   publishedAt: string
   category: string
   importance: Importance
-  sentiment: Sentiment
+  riskLevel: RiskLevel
   aiSummary: string
   tags: string[]
   fullText?: string
@@ -35,7 +35,7 @@ export interface CategoryPoint {
   count: number
 }
 
-export interface SentimentSlice {
+export interface RiskLevelSlice {
   name: string
   value: number
   color: string

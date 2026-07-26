@@ -74,7 +74,7 @@ export function TopDeptsChart({ data }: { data: { name: string; count: number }[
   )
 }
 
-export function SentimentDonut({ data }: { data: { name: string; value: number; color: string }[] }) {
+export function RiskLevelDonut({ data }: { data: { name: string; value: number; color: string }[] }) {
   const total = data.reduce((sum, s) => sum + s.value, 0)
   return (
     <div className="flex items-center gap-4">
