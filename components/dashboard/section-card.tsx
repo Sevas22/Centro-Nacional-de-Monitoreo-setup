@@ -13,7 +13,7 @@ interface SectionCardProps {
 export function SectionCard({ title, icon, action, children, className, bodyClassName }: SectionCardProps) {
   return (
     <section className={cn('glass flex flex-col rounded-xl', className)}>
-      <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           {icon && <span className="text-muted-foreground">{icon}</span>}
           <h2 className="text-sm font-semibold text-foreground">{title}</h2>

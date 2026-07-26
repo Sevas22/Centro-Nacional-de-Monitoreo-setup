@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { cookies } from 'next/headers'
-import { Sidebar } from '@/components/layout/sidebar'
-import { Navbar } from '@/components/layout/navbar'
+import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { ToastProvider } from '@/components/toast-provider'
 import { SESSION_COOKIE_NAME, verifySession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db'
@@ -25,13 +24,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-background grid-bg">
-        <Sidebar username={session?.email ?? 'Administrador'} trendingCount={trendingCount} alertsCount={alertsCount} />
-        <Navbar />
-        <main className="ml-[220px] pt-[58px]">
-          <div className="mx-auto max-w-[1600px] px-5 py-6">{children}</div>
-        </main>
-      </div>
+      <DashboardShell
+        username={session?.email ?? 'Administrador'}
+        trendingCount={trendingCount}
+        alertsCount={alertsCount}
+      >
+        {children}
+      </DashboardShell>
     </ToastProvider>
   )
 }

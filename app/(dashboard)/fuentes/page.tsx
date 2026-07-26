@@ -55,12 +55,12 @@ export default async function FuentesPage() {
         icon={<Radio className="size-4 text-[var(--accent-cyan)]" />}
         className="mt-6"
       >
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="border-b border-border bg-background/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2.5 font-medium">Fuente</th>
-                <th className="px-4 py-2.5 font-medium">Categorías cubiertas</th>
+                <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Categorías cubiertas</th>
                 <th className="px-4 py-2.5 font-medium">Artículos recientes</th>
               </tr>
             </thead>
@@ -69,11 +69,11 @@ export default async function FuentesPage() {
                 <tr key={s.name} className="border-b border-border/50 last:border-0 hover:bg-accent/30">
                   <td className="px-4 py-2.5">
                     <span className="flex items-center gap-2 font-medium text-foreground">
-                      <Newspaper className="size-4 text-muted-foreground" />
+                      <Newspaper className="size-4 shrink-0 text-muted-foreground" />
                       {s.name}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-muted-foreground">{s.categories.join(', ')}</td>
+                  <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">{s.categories.join(', ')}</td>
                   <td className="px-4 py-2.5 font-mono text-foreground">{s.newsToday}</td>
                 </tr>
               ))}

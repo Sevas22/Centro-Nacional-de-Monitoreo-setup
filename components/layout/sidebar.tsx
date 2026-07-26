@@ -17,6 +17,7 @@ import {
   Loader2,
   Shield,
   Antenna,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -78,10 +79,14 @@ export function Sidebar({
   username,
   trendingCount,
   alertsCount,
+  mobileOpen,
+  onMobileClose,
 }: {
   username: string
   trendingCount: number
   alertsCount: number
+  mobileOpen: boolean
+  onMobileClose: () => void
 }) {
   const pathname = usePathname()
   const [loggingOut, setLoggingOut] = useState(false)
@@ -97,32 +102,51 @@ export function Sidebar({
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-[220px] flex-col border-r border-border bg-surface">
-      <div className="flex h-[58px] items-center gap-2.5 border-b border-border px-4">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-          <Satellite className="size-5" />
+    <>
+      {/* Fondo oscuro detrás del drawer en mobile — clic afuera cierra el menú. En md+ el sidebar
+          siempre está visible (translate-x-0), así que este overlay nunca se renderiza ahí. */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={onMobileClose} aria-hidden="true" />
+      )}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 flex w-[220px] flex-col border-r border-border bg-surface transition-transform duration-200 md:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="flex h-[58px] items-center gap-2.5 border-b border-border px-4">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+            <Satellite className="size-5" />
+          </div>
+          <div className="leading-tight">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-primary/70">Proyecto ATLAS</p>
+            <p className="text-[13px] font-semibold text-foreground">SIFEM</p>
+          </div>
+          <button
+            onClick={onMobileClose}
+            aria-label="Cerrar menú"
+            className="ml-auto flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground md:hidden"
+          >
+            <X className="size-4" />
+          </button>
         </div>
-        <div className="leading-tight">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-primary/70">Proyecto ATLAS</p>
-          <p className="text-[13px] font-semibold text-foreground">SIFEM</p>
-        </div>
-      </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {groups.map((group) => (
-          <div key={group.title} className="mb-6">
-            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {group.title}
-            </p>
-            <ul className="flex flex-col gap-0.5">
-              {group.items.map((item) => {
-                const active = pathname === item.href
-                const Icon = item.icon
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {groups.map((group) => (
+            <div key={group.title} className="mb-6">
+              <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.title}
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const active = pathname === item.href
+                  const Icon = item.icon
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={onMobileClose}
+                        className={cn(
                         'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
                         active
                           ? 'bg-primary/10 text-primary'
@@ -175,6 +199,7 @@ export function Sidebar({
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
