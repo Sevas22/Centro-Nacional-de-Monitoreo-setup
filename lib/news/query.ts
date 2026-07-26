@@ -26,8 +26,11 @@ export interface NewsFilterParams {
   limit?: string
 }
 
-export const DEFAULT_FEED_LIMIT = 300
-export const FEED_LIMIT_STEP = 300
+// Suficientemente alto para que, a la escala actual (~1.5k artículos), el dashboard traiga
+// TODO por defecto sin necesidad de tocar "Cargar más" — ese botón queda como respaldo para
+// cuando la base crezca más allá de este número, no como el camino normal de uso.
+export const DEFAULT_FEED_LIMIT = 2000
+export const FEED_LIMIT_STEP = 2000
 
 /** Nunca se pierde ninguna noticia en la base — esto solo controla cuántas se traen para
  * renderizar de una sola vez. El botón "Cargar más" del feed sube este número via URL param. */
