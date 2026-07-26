@@ -13,7 +13,7 @@ import { Heatmap } from '@/components/dashboard/heatmap'
 import { AIIntelligencePanel } from '@/components/dashboard/ai-intelligence-panel'
 import { prisma } from '@/lib/db'
 import { aggregateDashboard, serializeArticle } from '@/lib/news/aggregate'
-import { buildNewsWhere, dateRangeOptions, type NewsFilterParams } from '@/lib/news/query'
+import { buildNewsWhere, dateRangeOptions, limitFor, type NewsFilterParams } from '@/lib/news/query'
 
 export const metadata: Metadata = {
   title: 'Dashboard | SIFEM',
@@ -29,10 +29,11 @@ export default async function DashboardPage({
 }) {
   const filters = await searchParams
   const where = buildNewsWhere(filters)
-  const hasFilters = Object.keys(filters).some((k) => filters[k as keyof NewsFilterParams])
+  const hasFilters = Object.keys(filters).some((k) => filters[k as keyof NewsFilterParams] && k !== 'limit')
+  const limit = limitFor(filters)
 
   const [rows, totalCount, latestBriefingRow] = await Promise.all([
-    prisma.newsArticle.findMany({ where, orderBy: { publishedAt: 'desc' }, take: 300 }),
+    prisma.newsArticle.findMany({ where, orderBy: { publishedAt: 'desc' }, take: limit }),
     prisma.newsArticle.count({ where }),
     prisma.briefing.findFirst({ where: { kind: 'diario' }, orderBy: { generatedAt: 'desc' } }),
   ])
@@ -74,7 +75,7 @@ export default async function DashboardPage({
           icon={<Activity className="size-4 text-[var(--accent-red)]" />}
           bodyClassName="pt-0"
         >
-          <NewsFeed articles={articles} />
+          <NewsFeed articles={articles} totalCount={totalCount} />
         </SectionCard>
       </div>
 

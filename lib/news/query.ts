@@ -23,6 +23,18 @@ export interface NewsFilterParams {
   category?: string
   sentiment?: string
   q?: string
+  limit?: string
+}
+
+export const DEFAULT_FEED_LIMIT = 300
+export const FEED_LIMIT_STEP = 300
+
+/** Nunca se pierde ninguna noticia en la base — esto solo controla cuántas se traen para
+ * renderizar de una sola vez. El botón "Cargar más" del feed sube este número via URL param. */
+export function limitFor(filters: NewsFilterParams): number {
+  const parsed = Number(filters.limit)
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_FEED_LIMIT
+  return Math.min(parsed, 10000)
 }
 
 interface DateWindow {
